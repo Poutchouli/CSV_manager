@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSV Uploader and Processor</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ccc; border-radius: 8px; }
+        h1 { text-align: center; color: #333; }
+        form div { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input[type="file"] { border: 1px solid #ddd; padding: 8px; border-radius: 4px; width: 100%; box-sizing: border-box; }
+        button { background-color: #007bff; color: white; padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; }
+        button:hover { background-color: #0056b3; }
+        .message { margin-top: 20px; padding: 10px; background-color: #e9ecef; border: 1px solid #dee2e6; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Upload Your CSV Files</h1>
+        <form action="/upload" method="post" enctype="multipart/form-data">
+            <div>
+                <label for="file1">Upload CSV File 1 (Max 50MB):</label>
+                <input type="file" name="file1" id="file1" accept=".csv">
+            </div>
+            <div>
+                <label for="file2">Upload CSV File 2 (Optional, for Merging - Max 50MB):</label> <input type="file" name="file2" id="file2" accept=".csv">
+            </div>
+            <button type="submit">Upload & Process</button>
+        </form>
+        <div id="message" class="message"></div>
+    </div>
+</body>
+</html>

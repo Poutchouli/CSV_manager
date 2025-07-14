@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cleaned CSV Data</title>
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/2.0.8/css/dataTables.dataTables.min.css">
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 1200px; margin: auto; padding: 20px; border: 1px solid #ccc; border-radius: 8px; }
+        h1, h2 { text-align: center; color: #333; }
+        .data-section { margin-top: 30px; border: 1px solid #eee; padding: 15px; border-radius: 5px; }
+        table.dataTable { width: 100% !important; margin-top: 15px; border-collapse: collapse; }
+        table.dataTable thead th, table.dataTable tbody td { padding: 8px; border: 1px solid #ddd; text-align: left; }
+        table.dataTable thead th { background-color: #f2f2f2; font-weight: bold; }
+        .dataTables_filter input, .dataTables_wrapper .dataTables_length select {
+            padding: 5px;
+            margin-left: 5px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+        }
+        .dataTables_filter {
+            margin-bottom: 10px;
+        }
+        .warning-message {
+            background-color: #fff3cd; /* Light yellow */
+            border-color: #ffeeba; /* Darker yellow */
+            color: #856404; /* Dark yellow text */
+            padding: 10px 15px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Cleaned CSV Data</h1>
+
+        {% if skipped_lines_info %}
+            <div class="warning-message">
+                <p><strong>Warning:</strong> Some lines in your uploaded files might have been skipped due to formatting inconsistencies (e.g., incorrect number of fields per row). Please check the console for details.</p>
+                <ul>
+                    {% for file_key, message in skipped_lines_info.items() %}
+                        <li>{{ original_names[file_key + '_name'] }}: {{ message }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+
+        {% if tables %}
+            {% for file_key, table_data in tables.items() %}
+                <div class="data-section">
+                    <h2>{{ original_names[file_key + '_name'] }}</h2>
+                    <table id="{{ file_key }}_table" class="display">
+                        <thead>
+                            <tr>
+                                {% for header in table_data.headers %}
+                                    <th>{{ header }}</th>
+                                {% endfor %}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in table_data.data %}
+                                <tr>
+                                    {% for cell in row %}
+                                        <td>{{ cell }}</td>
+                                    {% endfor %}
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% endfor %}
+        {% else %}
+            <p>No CSV data to display. Please <a href="/">upload files</a> first.</p>
+        {% endif %}
+    </div>
+
+    <script type="text/javascript" src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script type="text/javascript" src="https://cdn.datatables.net/2.0.8/js/dataTables.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            {% for file_key, table_data in tables.items() %}
+                var tableId = '#{{ file_key }}_table';
+                var dataTable = $(tableId).DataTable({
+                    "paging": true,
+                    "searching": true,
+                    "ordering": true,
+                    "info": true
+                });
+
+                $(tableId + ' thead tr').clone(true).appendTo(tableId + ' thead');
+                $(tableId + ' thead tr:eq(1) th').each(function (i) {
+                    var title = $(this).text();
+                    $(this).html('<input type="text" placeholder="Filter ' + title + '" style="width:100%;" />');
+
+                    $('input', this).on('keyup change', function () {
+                        if (dataTable.column(i).search() !== this.value) {
+                            dataTable
+                                .column(i)
+                                .search(this.value)
+                                .draw();
+                        }
+                    });
+                });
+            {% endfor %}
+        });
+    </script>
+</body>
+</html>

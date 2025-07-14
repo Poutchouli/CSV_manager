@@ -1,0 +1,5 @@
+/.pytest_cache
+/.venv
+/.vscode
+/uploads
+/__pycache__

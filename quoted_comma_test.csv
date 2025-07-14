@@ -1,0 +1,5 @@
+ID,Description,Details
+1,"Item A, with details",Some more info
+2,Item B with no comma,More details
+3,"Item C, another one","This, also has, commas"
+4,Item D with comma but NO quotes,Final details # This line will cause the error if not skipped
