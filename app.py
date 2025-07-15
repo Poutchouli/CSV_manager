@@ -4,6 +4,7 @@ import time
 from flask import Flask, request, render_template, redirect, url_for, session, jsonify, send_file
 from werkzeug.utils import secure_filename
 import pandas as pd
+import numpy as np
 import uuid
 
 app = Flask(__name__)
@@ -217,7 +218,7 @@ def get_column_summary():
 
     if pd.api.types.is_numeric_dtype(col_data) and col_data.nunique() > 15:
         # Histogram for numerical data
-        counts, bins = pd.np.histogram(col_data, bins=10)
+        counts, bins = np.histogram(col_data, bins=10)
         labels = [f"{bins[i]:.1f}-{bins[i+1]:.1f}" for i in range(len(bins)-1)]
         return jsonify({"status": "success", "type": "histogram", "labels": labels, "data": counts.tolist()})
     else:
@@ -306,6 +307,37 @@ def compare_tables():
     except Exception as e:
         print(f"Comparison error: {e}")
         return jsonify({"status": "error", "message": f"Comparison failed: {e}"}), 500
+
+@app.route('/api/delete_group', methods=['POST'])
+def delete_group():
+    """Deletes all rows belonging to a specific group in a column."""
+    data = request.get_json()
+    file_key = data.get('file_key')
+    column_name = data.get('column_name')
+    group_value = data.get('group_value')
+    filepath = get_filepath(file_key)
+
+    if not all([file_key, column_name, group_value is not None, filepath, os.path.exists(filepath)]):
+        return jsonify({"status": "error", "message": "Invalid request. Missing parameters."}), 400
+
+    try:
+        df = pd.read_csv(filepath)
+        
+        # Ensure type consistency for comparison, especially for numbers vs strings
+        df[column_name] = df[column_name].astype(str)
+        group_value = str(group_value)
+        
+        # Filter out the rows that belong to the group
+        original_rows = len(df)
+        df = df[df[column_name] != group_value]
+        rows_deleted = original_rows - len(df)
+
+        df.to_csv(filepath, index=False)
+        
+        return jsonify({"status": "success", "message": f"Deleted {rows_deleted} rows from group '{group_value}'."})
+    except Exception as e:
+        print(f"Error deleting group: {e}")
+        return jsonify({"status": "error", "message": f"Failed to delete group: {e}"}), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=17653, debug=True)
