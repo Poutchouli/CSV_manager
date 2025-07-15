@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSV Power Tool - Guide</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #111827; color: #d1d5db; }
+        .guide-section {
+            background-color: #1f2937;
+            border-left: 4px solid #3b82f6;
+        }
+        .guide-section h2 {
+            color: #ffffff;
+        }
+        .guide-section h3 {
+            color: #93c5fd;
+        }
+        .guide-section code {
+            background-color: #374151;
+            color: #f3f4f6;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Courier New', Courier, monospace;
+        }
+        .guide-section .icon {
+            color: #60a5fa;
+        }
+    </style>
+</head>
+<body class="text-gray-200">
+
+    <!-- Header -->
+    <header class="bg-gray-800 shadow-md p-4 flex justify-between items-center sticky top-0 z-40">
+        <h1 class="text-2xl font-bold text-white">
+            <i class="fas fa-book-open text-blue-400"></i> <span data-lang-key="title">User Guide</span>
+        </h1>
+        <div class="flex items-center gap-4">
+             <div id="lang-switcher" class="text-sm">
+                <button data-lang="en" class="lang-btn font-semibold text-gray-400 hover:text-white">EN</button>
+                <span class="text-gray-500">/</span>
+                <button data-lang="fr" class="lang-btn font-semibold text-gray-400 hover:text-white">FR</button>
+            </div>
+            <a href="/display" class="text-sm bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors" data-lang-key="backToTool">
+                <i class="fas fa-arrow-left mr-2"></i><span class="btn-text">Back to Tool</span>
+            </a>
+        </div>
+    </header>
+
+    <main class="p-4 md:p-6 lg:p-8 max-w-4xl mx-auto">
+        <div class="space-y-8">
+
+            <!-- Introduction -->
+            <div class="guide-section p-6 rounded-lg">
+                <h2 class="text-2xl font-bold mb-3" data-lang-key="introTitle">Introduction</h2>
+                <p class="text-lg" data-lang-key="introText">Welcome to the CSV Power Tool! This guide will walk you through all the features available to help you manage, edit, and analyze your CSV files effectively.</p>
+            </div>
+
+            <!-- Uploading Files -->
+            <div class="guide-section p-6 rounded-lg">
+                <h2 class="text-2xl font-bold mb-3" data-lang-key="uploadTitle">1. Uploading Files</h2>
+                <p data-lang-key="uploadText">Start by dragging and dropping one or two CSV files onto the upload area on the main page, or click "Browse Files" to select them from your computer. Once uploaded, click "Process Files" to open the editor.</p>
+            </div>
+
+            <!-- Editing Data -->
+            <div class="guide-section p-6 rounded-lg">
+                <h2 class="text-2xl font-bold mb-3" data-lang-key="editingTitle">2. Editing and Managing Data</h2>
+                <div class="space-y-4">
+                    <div>
+                        <h3 class="text-xl font-semibold mb-1" data-lang-key="editCellTitle">Editing a Cell</h3>
+                        <p data-lang-key="editCellText">Simply double-click on any cell to start editing. The cell's background will turn yellow to indicate it has been changed. Press Enter or click outside the cell to finish editing.</p>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-semibold mb-1" data-lang-key="addRowTitle">Adding and Deleting Rows</h3>
+                        <p><span data-lang-key="addRowText">Click the <button class="bg-green-600 text-white text-xs py-1 px-2 rounded"><i class="fas fa-plus"></i> Add Row</button> button to add a new, empty row to the bottom of the table. To delete a row, click the <i class="fas fa-trash-alt icon"></i> icon in the "Actions" column. The row will be grayed out, and you can undo this by clicking the <i class="fas fa-undo icon"></i> icon that appears.</span></p>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-semibold mb-1" data-lang-key="addColTitle">Adding and Deleting Columns</h3>
+                        <p><span data-lang-key="addColText">Use the <button class="bg-green-600 text-white text-xs py-1 px-2 rounded"><i class="fas fa-plus"></i> Add Column</button> button to add a new column. To delete a column, click the <i class="fas fa-times-circle icon"></i> icon next to the column's header. These changes are queued and will only be applied after you click "Save".</span></p>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-semibold mb-1" data-lang-key="saveTitle">Saving Changes</h3>
+                        <p><span data-lang-key="saveText">After making any changes, the <button class="bg-yellow-500 text-black text-xs py-1 px-2 rounded"><i class="fas fa-save"></i> Save</button> button will become active. Click it to apply all your queued changes (edits, deletions, additions) permanently. The page will then reload with the updated data.</span></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Advanced Features -->
+            <div class="guide-section p-6 rounded-lg">
+                <h2 class="text-2xl font-bold mb-3" data-lang-key="advancedTitle">3. Advanced Features</h2>
+                <div class="space-y-4">
+                     <div>
+                        <h3 class="text-xl font-semibold mb-1" data-lang-key="groupTitle">Grouping Data</h3>
+                        <p><span data-lang-key="groupText">Click the <button class="bg-orange-500 text-white text-xs py-1 px-2 rounded"><i class="fas fa-layer-group"></i> Group By</button> button and select a column. The table will collapse into groups based on the unique values in that column. You can expand/collapse each group by clicking on its header. You can also delete an entire group using the <i class="fas fa-trash-alt icon"></i> icon on the group header. Click <button class="bg-red-600 text-white text-xs py-1 px-2 rounded"><i class="fas fa-times-circle"></i> Clear Grouping</button> to return to the normal view.</span></p>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-semibold mb-1" data-lang-key="mergeTitle">Merging Tables</h3>
+                        <p><span data-lang-key="mergeText">If you have two tables, click the <button class="bg-purple-600 text-white text-xs py-1 px-2 rounded"><i class="fas fa-compress-arrows-alt"></i> Merge Tables</button> button. You can select the key columns from each table and the type of join (Inner, Left, Right, Outer) to perform. This will create a new table with the merged results. A safeguard will warn you if the merge is likely to create a very large number of rows.</span></p>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-semibold mb-1" data-lang-key="compareTitle">Comparing Tables</h3>
+                        <p><span data-lang-key="compareText">The <button class="bg-teal-600 text-white text-xs py-1 px-2 rounded"><i class="fas fa-exchange-alt"></i> Compare Tables</button> feature allows you to find differences between two tables. Select a key column for each, and the tool will generate a new table showing only the rows that are unique to each file.</span></p>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-semibold mb-1" data-lang-key="visualizeTitle">Visualizing Data</h3>
+                        <p><span data-lang-key="visualizeText">Click the <button class="bg-indigo-500 text-white text-xs py-1 px-2 rounded"><i class="fas fa-chart-bar"></i> Visualize</button> button and choose a column to generate an instant bar chart or histogram, helping you quickly understand the distribution of your data.</span></p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+<script>
+$(document).ready(function() {
+    const translations = {
+        en: {
+            title: "User Guide", backToTool: "Back to Tool",
+            introTitle: "Introduction", introText: "Welcome to the CSV Power Tool! This guide will walk you through all the features available to help you manage, edit, and analyze your CSV files effectively.",
+            uploadTitle: "1. Uploading Files", uploadText: "Start by dragging and dropping one or two CSV files onto the upload area on the main page, or click \"Browse Files\" to select them from your computer. Once uploaded, click \"Process Files\" to open the editor.",
+            editingTitle: "2. Editing and Managing Data",
+            editCellTitle: "Editing a Cell", editCellText: "Simply double-click on any cell to start editing. The cell's background will turn yellow to indicate it has been changed. Press Enter or click outside the cell to finish editing.",
+            addRowTitle: "Adding and Deleting Rows", addRowText: 'Click the <button class="bg-green-600 text-white text-xs py-1 px-2 rounded"><i class="fas fa-plus"></i> Add Row</button> button to add a new, empty row to the bottom of the table. To delete a row, click the <i class="fas fa-trash-alt icon"></i> icon in the "Actions" column. The row will be grayed out, and you can undo this by clicking the <i class="fas fa-undo icon"></i> icon that appears.',
+            addColTitle: "Adding and Deleting Columns", addColText: 'Use the <button class="bg-green-600 text-white text-xs py-1 px-2 rounded"><i class="fas fa-plus"></i> Add Column</button> button to add a new column. To delete a column, click the <i class="fas fa-times-circle icon"></i> icon next to the column\'s header. These changes are queued and will only be applied after you click "Save".',
+            saveTitle: "Saving Changes", saveText: 'After making any changes, the <button class="bg-yellow-500 text-black text-xs py-1 px-2 rounded"><i class="fas fa-save"></i> Save</button> button will become active. Click it to apply all your queued changes (edits, deletions, additions) permanently. The page will then reload with the updated data.',
+            advancedTitle: "3. Advanced Features",
+            groupTitle: "Grouping Data", groupText: 'Click the <button class="bg-orange-500 text-white text-xs py-1 px-2 rounded"><i class="fas fa-layer-group"></i> Group By</button> button and select a column. The table will collapse into groups based on the unique values in that column. You can expand/collapse each group by clicking on its header. You can also delete an entire group using the <i class="fas fa-trash-alt icon"></i> icon on the group header. Click <button class="bg-red-600 text-white text-xs py-1 px-2 rounded"><i class="fas fa-times-circle"></i> Clear Grouping</button> to return to the normal view.',
+            mergeTitle: "Merging Tables", mergeText: 'If you have two tables, click the <button class="bg-purple-600 text-white text-xs py-1 px-2 rounded"><i class="fas fa-compress-arrows-alt"></i> Merge Tables</button> button. You can select the key columns from each table and the type of join (Inner, Left, Right, Outer) to perform. This will create a new table with the merged results. A safeguard will warn you if the merge is likely to create a very large number of rows.',
+            compareTitle: "Comparing Tables", compareText: 'The <button class="bg-teal-600 text-white text-xs py-1 px-2 rounded"><i class="fas fa-exchange-alt"></i> Compare Tables</button> feature allows you to find differences between two tables. Select a key column for each, and the tool will generate a new table showing only the rows that are unique to each file.',
+            visualizeTitle: "Visualizing Data", visualizeText: 'Click the <button class="bg-indigo-500 text-white text-xs py-1 px-2 rounded"><i class="fas fa-chart-bar"></i> Visualize</button> button and choose a column to generate an instant bar chart or histogram, helping you quickly understand the distribution of your data.',
+        },
+        fr: {
+            title: "Guide d'Utilisation", backToTool: "Retour à l'Outil",
+            introTitle: "Introduction", introText: "Bienvenue dans l'Outil CSV Power ! Ce guide vous présentera toutes les fonctionnalités disponibles pour vous aider à gérer, éditer et analyser efficacement vos fichiers CSV.",
+            uploadTitle: "1. Téléversement de Fichiers", uploadText: "Commencez par glisser-déposer un ou deux fichiers CSV dans la zone de téléversement sur la page principale, ou cliquez sur « Parcourir les Fichiers » pour les sélectionner depuis votre ordinateur. Une fois téléversés, cliquez sur « Traiter les Fichiers » pour ouvrir l'éditeur.",
+            editingTitle: "2. Édition et Gestion des Données",
+            editCellTitle: "Éditer une Cellule", editCellText: "Double-cliquez simplement sur n'importe quelle cellule pour commencer à l'éditer. Le fond de la cellule deviendra jaune pour indiquer qu'elle a été modifiée. Appuyez sur Entrée ou cliquez en dehors de la cellule pour terminer l'édition.",
+            addRowTitle: "Ajouter et Supprimer des Lignes", addRowText: 'Cliquez sur le bouton <button class="bg-green-600 text-white text-xs py-1 px-2 rounded"><i class="fas fa-plus"></i> Ajouter Ligne</button> pour ajouter une nouvelle ligne vide en bas du tableau. Pour supprimer une ligne, cliquez sur l\'icône <i class="fas fa-trash-alt icon"></i> dans la colonne "Actions". La ligne sera grisée et vous pourrez annuler cette action en cliquant sur l\'icône <i class="fas fa-undo icon"></i> qui apparaît.',
+            addColTitle: "Ajouter et Supprimer des Colonnes", addColText: 'Utilisez le bouton <button class="bg-green-600 text-white text-xs py-1 px-2 rounded"><i class="fas fa-plus"></i> Ajouter Colonne</button> pour ajouter une nouvelle colonne. Pour supprimer une colonne, cliquez sur l\'icône <i class="fas fa-times-circle icon"></i> à côté de l\'en-tête de la colonne. Ces modifications sont mises en file d\'attente et ne seront appliquées qu\'après avoir cliqué sur "Enregistrer".',
+            saveTitle: "Enregistrer les Modifications", saveText: 'Après avoir effectué des modifications, le bouton <button class="bg-yellow-500 text-black text-xs py-1 px-2 rounded"><i class="fas fa-save"></i> Enregistrer</button> deviendra actif. Cliquez dessus pour appliquer toutes vos modifications en attente (éditions, suppressions, ajouts) de manière permanente. La page se rechargera alors avec les données mises à jour.',
+            advancedTitle: "3. Fonctionnalités Avancées",
+            groupTitle: "Regrouper les Données", groupText: 'Cliquez sur le bouton <button class="bg-orange-500 text-white text-xs py-1 px-2 rounded"><i class="fas fa-layer-group"></i> Regrouper</button> et sélectionnez une colonne. Le tableau se réduira en groupes basés sur les valeurs uniques de cette colonne. Vous pouvez déplier/replier chaque groupe en cliquant sur son en-tête. Vous pouvez également supprimer un groupe entier en utilisant l\'icône <i class="fas fa-trash-alt icon"></i> sur l\'en-tête du groupe. Cliquez sur <button class="bg-red-600 text-white text-xs py-1 px-2 rounded"><i class="fas fa-times-circle"></i> Annuler le Groupe</button> pour revenir à la vue normale.',
+            mergeTitle: "Fusionner les Tableaux", mergeText: 'Si vous avez deux tableaux, cliquez sur le bouton <button class="bg-purple-600 text-white text-xs py-1 px-2 rounded"><i class="fas fa-compress-arrows-alt"></i> Fusionner</button>. Vous pouvez sélectionner les colonnes clés de chaque tableau et le type de jointure (Interne, Gauche, Droite, Externe) à effectuer. Cela créera un nouveau tableau avec les résultats fusionnés. Une protection vous avertira si la fusion est susceptible de créer un très grand nombre de lignes.',
+            compareTitle: "Comparer les Tableaux", compareText: 'La fonctionnalité <button class="bg-teal-600 text-white text-xs py-1 px-2 rounded"><i class="fas fa-exchange-alt"></i> Comparer</button> vous permet de trouver les différences entre deux tableaux. Sélectionnez une colonne clé pour chacun, et l\'outil générera un nouveau tableau affichant uniquement les lignes uniques à chaque fichier.',
+            visualizeTitle: "Visualiser les Données", visualizeText: 'Cliquez sur le bouton <button class="bg-indigo-500 text-white text-xs py-1 px-2 rounded"><i class="fas fa-chart-bar"></i> Visualiser</button> et choisissez une colonne pour générer instantanément un diagramme à barres ou un histogramme, vous aidant à comprendre rapidement la distribution de vos données.',
+        }
+    };
+
+    function setLanguage(lang) {
+        if (!translations[lang]) return;
+        
+        $('[data-lang-key]').each((_, el) => {
+            const key = $(el).data('lang-key');
+            const text = translations[lang][key];
+            if (text) {
+                // Check if the element is a button with a specific structure
+                const textSpan = $(el).find('.btn-text');
+                if (textSpan.length > 0) {
+                    textSpan.html(text);
+                } else {
+                    $(el).html(text);
+                }
+            }
+        });
+        
+        $('#lang-switcher .lang-btn').removeClass('text-white underline').addClass('text-gray-400');
+        $(`#lang-switcher .lang-btn[data-lang="${lang}"]`).removeClass('text-gray-400').addClass('text-white underline');
+        localStorage.setItem('preferredLanguage', lang);
+    }
+
+    const savedLang = localStorage.getItem('preferredLanguage') || 'en';
+    setLanguage(savedLang);
+
+    $('#lang-switcher').on('click', '.lang-btn', (e) => {
+        setLanguage($(e.currentTarget).data('lang'));
+    });
+});
+</script>
+
+</body>
+</html>

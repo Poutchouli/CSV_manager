@@ -69,6 +69,9 @@
                 <span class="text-gray-500">/</span>
                 <button data-lang="fr" class="lang-btn font-semibold text-gray-400 hover:text-white">FR</button>
             </div>
+             <a href="/guide" class="text-sm text-blue-300 hover:text-blue-200 font-semibold py-2 px-4 rounded-lg transition-colors" data-lang-key="guide">
+                <i class="fas fa-question-circle mr-2"></i><span class="btn-text">Help</span>
+            </a>
             <a href="/" class="text-sm bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors" data-lang-key="uploadNew">
                 <i class="fas fa-upload mr-2"></i><span class="btn-text">Upload New Files</span>
             </a>
@@ -206,7 +209,7 @@ $(document).ready(function() {
                 uploadNew: 'Upload New Files', noFilesTitle: 'No files to display.', noFilesSubtitle: 'It seems your session has expired or no files were uploaded.', startOver: 'Start Over',
                 mergeTables: 'Merge Tables', compareTables: 'Compare Tables', saveChanges: 'Save Changes', groupBy: 'Group By', clearGrouping: 'Clear Grouping',
                 addRow: 'Add Row', addColumn: 'Add Column', findReplace: 'Find/Replace', visualize: 'Visualize', download: 'Download', actionsHeader: 'Actions',
-                cancel: 'Cancel', confirm: 'Confirm', proceed: 'Proceed',
+                cancel: 'Cancel', confirm: 'Confirm', proceed: 'Proceed', guide: 'Help',
                 mergeModalTitle: 'Merge Tables', compareModalTitle: 'Compare Tables', groupModalTitle: 'Group By Column', deleteGroupModalTitle: 'Delete Group',
                 addColumnModalTitle: 'Add New Column', deleteColumnModalTitle: 'Delete Column', findReplaceModalTitle: 'Find and Replace', visualizeModalTitle: 'Visualize Column',
                 chartModalTitle: 'Column Visualization', largeOperationTitle: 'Large Operation Warning',
@@ -218,7 +221,7 @@ $(document).ready(function() {
                 uploadNew: 'Téléverser Fichiers', noFilesTitle: 'Aucun fichier à afficher.', noFilesSubtitle: 'Il semble que votre session a expiré ou aucun fichier n\'a été téléversé.', startOver: 'Recommencer',
                 mergeTables: 'Fusionner', compareTables: 'Comparer', saveChanges: 'Enregistrer', groupBy: 'Regrouper', clearGrouping: 'Annuler le Groupe',
                 addRow: 'Ajouter Ligne', addColumn: 'Ajouter Colonne', findReplace: 'Chercher/Remplacer', visualize: 'Visualiser', download: 'Télécharger', actionsHeader: 'Actions',
-                cancel: 'Annuler', confirm: 'Confirmer', proceed: 'Procéder',
+                cancel: 'Annuler', confirm: 'Confirmer', proceed: 'Procéder', guide: 'Aide',
                 mergeModalTitle: 'Fusionner les Tableaux', compareModalTitle: 'Comparer les Tableaux', groupModalTitle: 'Regrouper par Colonne', deleteGroupModalTitle: 'Supprimer le Groupe',
                 addColumnModalTitle: 'Ajouter Colonne', deleteColumnModalTitle: 'Supprimer Colonne', findReplaceModalTitle: 'Chercher et Remplacer', visualizeModalTitle: 'Visualiser la Colonne',
                 chartModalTitle: 'Visualisation de Colonne', largeOperationTitle: 'Avertissement d\'Opération Volumineuse',
@@ -248,8 +251,6 @@ $(document).ready(function() {
                 const groupingInfo = this.groupingState[fileKey];
                 let dtConfig = {
                     responsive: true, scrollX: true,
-                    pageLength: 25,
-                    lengthMenu: [[10, 25, 50, 100, 250, 500, 1000, -1], [10, 25, 50, 100, 250, 500, 1000, "All"]],
                     columnDefs: [{ orderable: false, targets: -1 }],
                     rowGroup: groupingInfo ? { 
                         dataSrc: groupingInfo.colIndex,
@@ -678,4 +679,4 @@ $(document).ready(function() {
 </script>
 
 </body>
-</html>
+</ht

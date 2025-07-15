@@ -71,7 +71,7 @@ def before_request_hook():
     if uuid.uuid4().int % 100 < 5:
         cleanup_old_sessions()
 
-# --- Core Routes (Unchanged) ---
+# --- Core Routes ---
 @app.route('/')
 def index():
     session.clear()
@@ -115,6 +115,11 @@ def display_data():
             except Exception as e:
                 tables[file_key] = {'error': str(e), 'original_name': session.get(f'{file_key}_original_name')}
     return render_template('display_csv.html', tables=tables)
+
+@app.route('/guide')
+def guide():
+    """Renders the user guide page."""
+    return render_template('guide.html')
 
 @app.route('/download/<file_key>')
 def download_csv(file_key):
