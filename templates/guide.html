@@ -32,6 +32,19 @@
         .guide-section .icon {
             color: #60a5fa;
         }
+        .example-table {
+            width: 100%;
+            margin-top: 1rem;
+            border-collapse: collapse;
+        }
+        .example-table th, .example-table td {
+            border: 1px solid #475569;
+            padding: 8px;
+            text-align: left;
+        }
+        .example-table th {
+            background-color: #334155;
+        }
     </style>
 </head>
 <body class="text-gray-200">
@@ -94,21 +107,53 @@
             <!-- Advanced Features -->
             <div class="guide-section p-6 rounded-lg">
                 <h2 class="text-2xl font-bold mb-3" data-lang-key="advancedTitle">3. Advanced Features</h2>
-                <div class="space-y-4">
+                <div class="space-y-6">
                      <div>
-                        <h3 class="text-xl font-semibold mb-1" data-lang-key="groupTitle">Grouping Data</h3>
+                        <h3 class="text-xl font-semibold mb-2" data-lang-key="groupTitle">Grouping Data</h3>
                         <p><span data-lang-key="groupText">Click the <button class="bg-orange-500 text-white text-xs py-1 px-2 rounded"><i class="fas fa-layer-group"></i> Group By</button> button and select a column. The table will collapse into groups based on the unique values in that column. You can expand/collapse each group by clicking on its header. You can also delete an entire group using the <i class="fas fa-trash-alt icon"></i> icon on the group header. Click <button class="bg-red-600 text-white text-xs py-1 px-2 rounded"><i class="fas fa-times-circle"></i> Clear Grouping</button> to return to the normal view.</span></p>
                     </div>
-                    <div>
-                        <h3 class="text-xl font-semibold mb-1" data-lang-key="mergeTitle">Merging Tables</h3>
-                        <p><span data-lang-key="mergeText">If you have two tables, click the <button class="bg-purple-600 text-white text-xs py-1 px-2 rounded"><i class="fas fa-compress-arrows-alt"></i> Merge Tables</button> button. You can select the key columns from each table and the type of join (Inner, Left, Right, Outer) to perform. This will create a new table with the merged results. A safeguard will warn you if the merge is likely to create a very large number of rows.</span></p>
+                    
+                    <div class="border-t border-gray-600 pt-6">
+                        <h3 class="text-xl font-semibold mb-2" data-lang-key="mergeTitle">Merging Tables</h3>
+                        <p class="mb-4"><span data-lang-key="mergeIntro">If you have two tables, click the <button class="bg-purple-600 text-white text-xs py-1 px-2 rounded"><i class="fas fa-compress-arrows-alt"></i> Merge Tables</button> button. This allows you to combine tables based on a common column (a "key"). A safeguard will warn you if the merge is likely to create a very large number of rows. Here are the types of joins you can perform:</span></p>
+                        
+                        <div data-lang-key="mergeExamples">
+                            <p class="mb-4"><strong>Example Tables:</strong> Let's use a "Users" table and a "Sales" table.</p>
+                            <div class="grid md:grid-cols-2 gap-4 mb-4">
+                                <div>
+                                    <h4 class="font-bold">Users</h4>
+                                    <table class="example-table"><thead><tr><th>UserID</th><th>Name</th></tr></thead><tbody><tr><td>1</td><td>Alice</td></tr><tr><td>2</td><td>Bob</td></tr><tr><td>3</td><td>Charlie</td></tr></tbody></table>
+                                </div>
+                                <div>
+                                    <h4 class="font-bold">Sales</h4>
+                                    <table class="example-table"><thead><tr><th>UserID</th><th>Product</th></tr></thead><tbody><tr><td>1</td><td>Laptop</td></tr><tr><td>2</td><td>Mouse</td></tr><tr><td>4</td><td>Keyboard</td></tr></tbody></table>
+                                </div>
+                            </div>
+
+                            <h4 class="text-lg font-semibold mt-4">Inner Join</h4>
+                            <p class="mb-2">Returns only the rows where the key (<code>UserID</code>) exists in <strong>both</strong> tables.</p>
+                            <table class="example-table"><thead><tr><th>UserID</th><th>Name</th><th>Product</th></tr></thead><tbody><tr><td>1</td><td>Alice</td><td>Laptop</td></tr><tr><td>2</td><td>Bob</td><td>Mouse</td></tr></tbody></table>
+                            
+                            <h4 class="text-lg font-semibold mt-4">Left Join</h4>
+                            <p class="mb-2">Returns <strong>all</strong> rows from the left table (Users), and the matched rows from the right table (Sales). If there is no match, the columns from the right table will be empty.</p>
+                            <table class="example-table"><thead><tr><th>UserID</th><th>Name</th><th>Product</th></tr></thead><tbody><tr><td>1</td><td>Alice</td><td>Laptop</td></tr><tr><td>2</td><td>Bob</td><td>Mouse</td></tr><tr><td>3</td><td>Charlie</td><td>(empty)</td></tr></tbody></table>
+
+                            <h4 class="text-lg font-semibold mt-4">Right Join</h4>
+                            <p class="mb-2">Returns <strong>all</strong> rows from the right table (Sales), and the matched rows from the left table (Users). If there is no match, the columns from the left table will be empty.</p>
+                            <table class="example-table"><thead><tr><th>UserID</th><th>Name</th><th>Product</th></tr></thead><tbody><tr><td>1</td><td>Alice</td><td>Laptop</td></tr><tr><td>2</td><td>Bob</td><td>Mouse</td></tr><tr><td>4</td><td>(empty)</td><td>Keyboard</td></tr></tbody></table>
+
+                            <h4 class="text-lg font-semibold mt-4">Outer Join</h4>
+                            <p class="mb-2">Returns <strong>all</strong> rows from <strong>both</strong> tables. It combines the results of both Left and Right Joins.</p>
+                            <table class="example-table"><thead><tr><th>UserID</th><th>Name</th><th>Product</th></tr></thead><tbody><tr><td>1</td><td>Alice</td><td>Laptop</td></tr><tr><td>2</td><td>Bob</td><td>Mouse</td></tr><tr><td>3</td><td>Charlie</td><td>(empty)</td></tr><tr><td>4</td><td>(empty)</td><td>Keyboard</td></tr></tbody></table>
+                        </div>
                     </div>
-                    <div>
-                        <h3 class="text-xl font-semibold mb-1" data-lang-key="compareTitle">Comparing Tables</h3>
-                        <p><span data-lang-key="compareText">The <button class="bg-teal-600 text-white text-xs py-1 px-2 rounded"><i class="fas fa-exchange-alt"></i> Compare Tables</button> feature allows you to find differences between two tables. Select a key column for each, and the tool will generate a new table showing only the rows that are unique to each file.</span></p>
+
+                    <div class="border-t border-gray-600 pt-6">
+                        <h3 class="text-xl font-semibold mb-2" data-lang-key="compareTitle">Comparing Tables</h3>
+                        <p><span data-lang-key="compareText">The <button class="bg-teal-600 text-white text-xs py-1 px-2 rounded"><i class="fas fa-exchange-alt"></i> Compare Tables</button> feature is a specialized tool to find differences. It performs an Outer Join behind the scenes but only shows you the rows that are unique to each file (rows where the other table had no matching key). Using the example above, the result would show Charlie (only in Users) and the Keyboard sale (only in Sales).</span></p>
                     </div>
-                    <div>
-                        <h3 class="text-xl font-semibold mb-1" data-lang-key="visualizeTitle">Visualizing Data</h3>
+                    <div class="border-t border-gray-600 pt-6">
+                        <h3 class="text-xl font-semibold mb-2" data-lang-key="visualizeTitle">Visualizing Data</h3>
                         <p><span data-lang-key="visualizeText">Click the <button class="bg-indigo-500 text-white text-xs py-1 px-2 rounded"><i class="fas fa-chart-bar"></i> Visualize</button> button and choose a column to generate an instant bar chart or histogram, helping you quickly understand the distribution of your data.</span></p>
                     </div>
                 </div>
@@ -131,8 +176,9 @@ $(document).ready(function() {
             saveTitle: "Saving Changes", saveText: 'After making any changes, the <button class="bg-yellow-500 text-black text-xs py-1 px-2 rounded"><i class="fas fa-save"></i> Save</button> button will become active. Click it to apply all your queued changes (edits, deletions, additions) permanently. The page will then reload with the updated data.',
             advancedTitle: "3. Advanced Features",
             groupTitle: "Grouping Data", groupText: 'Click the <button class="bg-orange-500 text-white text-xs py-1 px-2 rounded"><i class="fas fa-layer-group"></i> Group By</button> button and select a column. The table will collapse into groups based on the unique values in that column. You can expand/collapse each group by clicking on its header. You can also delete an entire group using the <i class="fas fa-trash-alt icon"></i> icon on the group header. Click <button class="bg-red-600 text-white text-xs py-1 px-2 rounded"><i class="fas fa-times-circle"></i> Clear Grouping</button> to return to the normal view.',
-            mergeTitle: "Merging Tables", mergeText: 'If you have two tables, click the <button class="bg-purple-600 text-white text-xs py-1 px-2 rounded"><i class="fas fa-compress-arrows-alt"></i> Merge Tables</button> button. You can select the key columns from each table and the type of join (Inner, Left, Right, Outer) to perform. This will create a new table with the merged results. A safeguard will warn you if the merge is likely to create a very large number of rows.',
-            compareTitle: "Comparing Tables", compareText: 'The <button class="bg-teal-600 text-white text-xs py-1 px-2 rounded"><i class="fas fa-exchange-alt"></i> Compare Tables</button> feature allows you to find differences between two tables. Select a key column for each, and the tool will generate a new table showing only the rows that are unique to each file.',
+            mergeTitle: "Merging Tables", mergeIntro: 'If you have two tables, click the <button class="bg-purple-600 text-white text-xs py-1 px-2 rounded"><i class="fas fa-compress-arrows-alt"></i> Merge Tables</button> button. This allows you to combine tables based on a common column (a "key"). A safeguard will warn you if the merge is likely to create a very large number of rows. Here are the types of joins you can perform:',
+            mergeExamples: `<p class="mb-4"><strong>Example Tables:</strong> Let's use a "Users" table and a "Sales" table.</p><div class="grid md:grid-cols-2 gap-4 mb-4"><div><h4 class="font-bold">Users</h4><table class="example-table"><thead><tr><th>UserID</th><th>Name</th></tr></thead><tbody><tr><td>1</td><td>Alice</td></tr><tr><td>2</td><td>Bob</td></tr><tr><td>3</td><td>Charlie</td></tr></tbody></table></div><div><h4 class="font-bold">Sales</h4><table class="example-table"><thead><tr><th>UserID</th><th>Product</th></tr></thead><tbody><tr><td>1</td><td>Laptop</td></tr><tr><td>2</td><td>Mouse</td></tr><tr><td>4</td><td>Keyboard</td></tr></tbody></table></div></div><h4 class="text-lg font-semibold mt-4">Inner Join</h4><p class="mb-2">Returns only the rows where the key (<code>UserID</code>) exists in <strong>both</strong> tables.</p><table class="example-table"><thead><tr><th>UserID</th><th>Name</th><th>Product</th></tr></thead><tbody><tr><td>1</td><td>Alice</td><td>Laptop</td></tr><tr><td>2</td><td>Bob</td><td>Mouse</td></tr></tbody></table><h4 class="text-lg font-semibold mt-4">Left Join</h4><p class="mb-2">Returns <strong>all</strong> rows from the left table (Users), and the matched rows from the right table (Sales). If there is no match, the columns from the right table will be empty.</p><table class="example-table"><thead><tr><th>UserID</th><th>Name</th><th>Product</th></tr></thead><tbody><tr><td>1</td><td>Alice</td><td>Laptop</td></tr><tr><td>2</td><td>Bob</td><td>Mouse</td></tr><tr><td>3</td><td>Charlie</td><td>(empty)</td></tr></tbody></table><h4 class="text-lg font-semibold mt-4">Right Join</h4><p class="mb-2">Returns <strong>all</strong> rows from the right table (Sales), and the matched rows from the left table (Users). If there is no match, the columns from the left table will be empty.</p><table class="example-table"><thead><tr><th>UserID</th><th>Name</th><th>Product</th></tr></thead><tbody><tr><td>1</td><td>Alice</td><td>Laptop</td></tr><tr><td>2</td><td>Bob</td><td>Mouse</td></tr><tr><td>4</td><td>(empty)</td><td>Keyboard</td></tr></tbody></table><h4 class="text-lg font-semibold mt-4">Outer Join</h4><p class="mb-2">Returns <strong>all</strong> rows from <strong>both</strong> tables. It combines the results of both Left and Right Joins.</p><table class="example-table"><thead><tr><th>UserID</th><th>Name</th><th>Product</th></tr></thead><tbody><tr><td>1</td><td>Alice</td><td>Laptop</td></tr><tr><td>2</td><td>Bob</td><td>Mouse</td></tr><tr><td>3</td><td>Charlie</td><td>(empty)</td></tr><tr><td>4</td><td>(empty)</td><td>Keyboard</td></tr></tbody></table>`,
+            compareTitle: "Comparing Tables", compareText: 'The <button class="bg-teal-600 text-white text-xs py-1 px-2 rounded"><i class="fas fa-exchange-alt"></i> Compare Tables</button> feature is a specialized tool to find differences. It performs an Outer Join behind the scenes but only shows you the rows that are unique to each file (rows where the other table had no matching key). Using the example above, the result would show Charlie (only in Users) and the Keyboard sale (only in Sales).',
             visualizeTitle: "Visualizing Data", visualizeText: 'Click the <button class="bg-indigo-500 text-white text-xs py-1 px-2 rounded"><i class="fas fa-chart-bar"></i> Visualize</button> button and choose a column to generate an instant bar chart or histogram, helping you quickly understand the distribution of your data.',
         },
         fr: {
@@ -146,8 +192,9 @@ $(document).ready(function() {
             saveTitle: "Enregistrer les Modifications", saveText: 'Après avoir effectué des modifications, le bouton <button class="bg-yellow-500 text-black text-xs py-1 px-2 rounded"><i class="fas fa-save"></i> Enregistrer</button> deviendra actif. Cliquez dessus pour appliquer toutes vos modifications en attente (éditions, suppressions, ajouts) de manière permanente. La page se rechargera alors avec les données mises à jour.',
             advancedTitle: "3. Fonctionnalités Avancées",
             groupTitle: "Regrouper les Données", groupText: 'Cliquez sur le bouton <button class="bg-orange-500 text-white text-xs py-1 px-2 rounded"><i class="fas fa-layer-group"></i> Regrouper</button> et sélectionnez une colonne. Le tableau se réduira en groupes basés sur les valeurs uniques de cette colonne. Vous pouvez déplier/replier chaque groupe en cliquant sur son en-tête. Vous pouvez également supprimer un groupe entier en utilisant l\'icône <i class="fas fa-trash-alt icon"></i> sur l\'en-tête du groupe. Cliquez sur <button class="bg-red-600 text-white text-xs py-1 px-2 rounded"><i class="fas fa-times-circle"></i> Annuler le Groupe</button> pour revenir à la vue normale.',
-            mergeTitle: "Fusionner les Tableaux", mergeText: 'Si vous avez deux tableaux, cliquez sur le bouton <button class="bg-purple-600 text-white text-xs py-1 px-2 rounded"><i class="fas fa-compress-arrows-alt"></i> Fusionner</button>. Vous pouvez sélectionner les colonnes clés de chaque tableau et le type de jointure (Interne, Gauche, Droite, Externe) à effectuer. Cela créera un nouveau tableau avec les résultats fusionnés. Une protection vous avertira si la fusion est susceptible de créer un très grand nombre de lignes.',
-            compareTitle: "Comparer les Tableaux", compareText: 'La fonctionnalité <button class="bg-teal-600 text-white text-xs py-1 px-2 rounded"><i class="fas fa-exchange-alt"></i> Comparer</button> vous permet de trouver les différences entre deux tableaux. Sélectionnez une colonne clé pour chacun, et l\'outil générera un nouveau tableau affichant uniquement les lignes uniques à chaque fichier.',
+            mergeTitle: "Fusionner les Tableaux", mergeIntro: 'Si vous avez deux tableaux, cliquez sur le bouton <button class="bg-purple-600 text-white text-xs py-1 px-2 rounded"><i class="fas fa-compress-arrows-alt"></i> Fusionner</button>. Cela vous permet de combiner des tableaux basés sur une colonne commune (une "clé"). Une protection vous avertira si la fusion est susceptible de créer un très grand nombre de lignes. Voici les types de jointures que vous pouvez effectuer :',
+            mergeExamples: `<p class="mb-4"><strong>Tableaux d'Exemple :</strong> Utilisons un tableau "Utilisateurs" et un tableau "Ventes".</p><div class="grid md:grid-cols-2 gap-4 mb-4"><div><h4 class="font-bold">Utilisateurs</h4><table class="example-table"><thead><tr><th>UserID</th><th>Nom</th></tr></thead><tbody><tr><td>1</td><td>Alice</td></tr><tr><td>2</td><td>Bob</td></tr><tr><td>3</td><td>Charlie</td></tr></tbody></table></div><div><h4 class="font-bold">Ventes</h4><table class="example-table"><thead><tr><th>UserID</th><th>Produit</th></tr></thead><tbody><tr><td>1</td><td>Portable</td></tr><tr><td>2</td><td>Souris</td></tr><tr><td>4</td><td>Clavier</td></tr></tbody></table></div></div><h4 class="text-lg font-semibold mt-4">Jointure Interne (Inner Join)</h4><p class="mb-2">Retourne uniquement les lignes où la clé (<code>UserID</code>) existe dans les <strong>deux</strong> tableaux.</p><table class="example-table"><thead><tr><th>UserID</th><th>Nom</th><th>Produit</th></tr></thead><tbody><tr><td>1</td><td>Alice</td><td>Portable</td></tr><tr><td>2</td><td>Bob</td><td>Souris</td></tr></tbody></table><h4 class="text-lg font-semibold mt-4">Jointure Gauche (Left Join)</h4><p class="mb-2">Retourne <strong>toutes</strong> les lignes du tableau de gauche (Utilisateurs), et les lignes correspondantes du tableau de droite (Ventes). S'il n'y a pas de correspondance, les colonnes du tableau de droite seront vides.</p><table class="example-table"><thead><tr><th>UserID</th><th>Nom</th><th>Produit</th></tr></thead><tbody><tr><td>1</td><td>Alice</td><td>Portable</td></tr><tr><td>2</td><td>Bob</td><td>Souris</td></tr><tr><td>3</td><td>Charlie</td><td>(vide)</td></tr></tbody></table><h4 class="text-lg font-semibold mt-4">Jointure Droite (Right Join)</h4><p class="mb-2">Retourne <strong>toutes</strong> les lignes du tableau de droite (Ventes), et les lignes correspondantes du tableau de gauche (Utilisateurs). S'il n'y a pas de correspondance, les colonnes du tableau de gauche seront vides.</p><table class="example-table"><thead><tr><th>UserID</th><th>Nom</th><th>Produit</th></tr></thead><tbody><tr><td>1</td><td>Alice</td><td>Portable</td></tr><tr><td>2</td><td>Bob</td><td>Souris</td></tr><tr><td>4</td><td>(vide)</td><td>Clavier</td></tr></tbody></table><h4 class="text-lg font-semibold mt-4">Jointure Externe (Outer Join)</h4><p class="mb-2">Retourne <strong>toutes</strong> les lignes des <strong>deux</strong> tableaux. Elle combine les résultats des jointures Gauche et Droite.</p><table class="example-table"><thead><tr><th>UserID</th><th>Nom</th><th>Produit</th></tr></thead><tbody><tr><td>1</td><td>Alice</td><td>Portable</td></tr><tr><td>2</td><td>Bob</td><td>Souris</td></tr><tr><td>3</td><td>Charlie</td><td>(vide)</td></tr><tr><td>4</td><td>(vide)</td><td>Clavier</td></tr></tbody></table>`,
+            compareTitle: "Comparer les Tableaux", compareText: 'La fonctionnalité <button class="bg-teal-600 text-white text-xs py-1 px-2 rounded"><i class="fas fa-exchange-alt"></i> Comparer</button> est un outil spécialisé pour trouver les différences. Elle effectue une Jointure Externe en arrière-plan mais ne vous montre que les lignes uniques à chaque fichier (lignes où l\'autre tableau n\'avait pas de clé correspondante). En utilisant l\'exemple ci-dessus, le résultat montrerait Charlie (uniquement dans Utilisateurs) et la vente du Clavier (uniquement dans Ventes).',
             visualizeTitle: "Visualiser les Données", visualizeText: 'Cliquez sur le bouton <button class="bg-indigo-500 text-white text-xs py-1 px-2 rounded"><i class="fas fa-chart-bar"></i> Visualiser</button> et choisissez une colonne pour générer instantanément un diagramme à barres ou un histogramme, vous aidant à comprendre rapidement la distribution de vos données.',
         }
     };
