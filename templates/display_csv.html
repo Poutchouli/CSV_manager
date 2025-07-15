@@ -3,675 +3,537 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cleaned CSV Data</title>
-    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/2.0.8/css/dataTables.dataTables.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <title>CSV Power Tool - Editor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+    <script type="text/javascript" src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
-        .container { max-width: 1400px; margin: auto; padding: 20px; border: 1px solid #ccc; border-radius: 8px; }
-        h1, h2 { text-align: center; color: #333; }
-        .data-section { margin-top: 30px; border: 1px solid #eee; padding: 15px; border-radius: 5px; }
-        table.dataTable { width: 100% !important; margin-top: 15px; border-collapse: collapse; }
-        table.dataTable thead th, table.dataTable tbody td { padding: 8px; border: 1px solid #ddd; text-align: left; }
-        table.dataTable thead th { background-color: #f2f2f2; font-weight: bold; }
-        .dataTables_filter input, .dataTables_wrapper .dataTables_length select {
-            padding: 5px;
-            margin-left: 5px;
-            border: 1px solid #ccc;
-            border-radius: 3px;
-        }
-        .dataTables_filter {
-            margin-bottom: 10px;
-        }
-        .warning-message {
-            background-color: #fff3cd; /* Light yellow */
-            border-color: #ffeeba; /* Darker yellow */
-            color: #856404; /* Dark yellow text */
-            padding: 10px 15px;
-            margin-bottom: 20px;
-            border-radius: 5px;
-            text-align: center;
-        }
-        /* Action buttons above the table */
-        .table-actions { margin-bottom: 15px; display: flex; justify-content: space-between; gap: 10px; }
-        .table-actions button {
-            padding: 8px 15px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 0.9em;
-            transition: background-color 0.2s ease;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-        .table-actions .add-btn { background-color: #28a745; color: white; }
-        .table-actions .add-btn:hover { background-color: #218838; }
-        .table-actions .save-btn { background-color: #007bff; color: white; }
-        .table-actions .save-btn:hover { background-color: #0056b3; }
-        .table-actions .warn-btn { background-color: #ffc107; color: #333; }
-        .table-actions .warn-btn:hover { background-color: #e0a800; }
-
-
-        /* Styles for editable cells */
-        td.editable { cursor: pointer; }
-        td.editing input {
-            width: 100%;
-            padding: 5px;
-            box-sizing: border-box;
-            border: 1px solid #007bff;
-            border-radius: 3px;
-        }
-        /* Styles for action icons in cells/headers */
-        .action-icon {
-            cursor: pointer;
-            color: #dc3545; /* Red for delete */
-            margin-left: 5px;
-            font-size: 0.9em;
-        }
-        .action-icon:hover { color: #bd2130; }
-        .col-header-actions {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            width: 100%; /* Ensure content takes full width of th */
-        }
-
-        /* Column filter and action row above headers */
-        .column-controls {
-            background-color: #f8f9fa;
-            border-bottom: 2px solid #dee2e6;
-        }
-        .column-controls th {
-            padding: 8px;
-            border: 1px solid #ddd;
-            background-color: #f8f9fa !important;
-            position: relative;
-        }
-        .column-controls input {
-            width: 100%;
-            padding: 4px;
-            border: 1px solid #ccc;
-            border-radius: 3px;
-            font-size: 0.85em;
-        }
-        .column-delete-btn {
-            position: absolute;
-            top: 2px;
-            right: 2px;
-            background: #dc3545;
-            color: white;
-            border: none;
-            width: 18px;
-            height: 18px;
-            border-radius: 50%;
-            font-size: 10px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .column-delete-btn:hover {
-            background: #bd2130;
-        }
-
-        /* Make newly added rows/cells stand out for immediate editing */
-        .newly-added {
-            background-color: #e7f3ff !important;
-            border: 2px solid #007bff !important;
-        }
-
-        /* Modal Styles */
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            overflow: auto;
-            background-color: rgba(0,0,0,0.4);
-            justify-content: center;
-            align-items: center;
-        }
-        .modal-content {
-            background-color: #fefefe;
-            margin: auto;
-            padding: 20px;
-            border: 1px solid #888;
-            width: 80%;
-            max-width: 600px;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-            position: relative;
-        }
-        .close-button {
-            color: #aaa;
-            float: right;
-            font-size: 28px;
-            font-weight: bold;
-            cursor: pointer;
-        }
-        .close-button:hover,
-        .close-button:focus {
-            color: black;
-            text-decoration: none;
-        }
-        .modal-body select {
-            width: 100%;
-            padding: 8px;
-            margin-bottom: 15px;
-            border-radius: 4px;
-            border: 1px solid #ccc;
-        }
-        .modal-body button {
-            background-color: #007bff;
-            color: white;
-            padding: 10px 15px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 1em;
-        }
-        #count-results-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 15px;
-        }
-        #count-results-table th, #count-results-table td {
-            border: 1px solid #ddd;
-            padding: 8px;
-            text-align: left;
-        }
-        #count-results-table th {
-            background-color: #f2f2f2;
-        }
+        body { font-family: 'Inter', sans-serif; background-color: #111827; /* gray-900 */ }
+        .dataTables_wrapper .dataTables_length, .dataTables_wrapper .dataTables_filter, .dataTables_wrapper .dataTables_info, .dataTables_wrapper .dataTables_paginate { color: #d1d5db; /* gray-300 */ }
+        .dataTables_wrapper .dataTables_length select { background-color: #374151; border-color: #4b5563; }
+        .dataTables_wrapper .dataTables_filter input { background-color: #374151; border-color: #4b5563; }
+        .dataTables_wrapper .dataTables_paginate .paginate_button { color: #d1d5db !important; }
+        .dataTables_wrapper .dataTables_paginate .paginate_button.disabled { color: #6b7280 !important; }
+        .dataTables_wrapper .dataTables_paginate .paginate_button.current { background: #1f2937 !important; border-color: #3b82f6 !important; color: #eff6ff !important; }
+        table.dataTable { border-color: #374151; }
+        table.dataTable thead th, table.dataTable thead td { border-bottom-color: #4b5563 !important; }
+        table.dataTable tbody td { color: #d1d5db; border-top-color: #374151 !important; }
+        table.dataTable tbody tr:hover { background-color: #1f2937 !important; }
+        td.editable { cursor: cell; }
+        td.editing input { width: 100%; padding: 6px; box-sizing: border-box; background-color: #1e40af; color: white; border: 1px solid #3b82f6; border-radius: 4px; }
+        .action-icon { cursor: pointer; transition: color 0.2s; }
+        .delete-row-icon:hover { color: #ef4444; }
+        .delete-col-icon:hover { color: #ef4444; }
+        .modal { display: none; }
+        .modal.active { display: flex; }
     </style>
 </head>
-<body>
-    <div class="container">
-        <h1>Cleaned CSV Data</h1>
+<body class="text-gray-200">
 
-        {% if skipped_lines_info %}
-            <div class="warning-message">
-                <p><strong>Warning:</strong> Some lines in your uploaded files might have been skipped due to formatting inconsistencies (e.g., incorrect number of fields per row). Please check the console for details.</p>
-                <ul>
-                    {% for file_key, message in skipped_lines_info.items() %}
-                        <li>{{ original_names[file_key + '_name'] }}: {{ message }}</li>
-                    {% endfor %}
-                </ul>
+    <!-- Header -->
+    <header class="bg-gray-800 shadow-md p-4 flex justify-between items-center">
+        <h1 class="text-2xl font-bold text-white">
+            <i class="fas fa-file-csv text-blue-400"></i> CSV Power Tool
+        </h1>
+        <a href="/" class="text-sm bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors">
+            <i class="fas fa-upload mr-2"></i>Upload New Files
+        </a>
+    </header>
+
+    <main class="p-4 md:p-6 lg:p-8">
+        {% if not tables %}
+            <div class="text-center bg-gray-800 p-10 rounded-lg">
+                <h2 class="text-2xl font-semibold text-white">No files to display.</h2>
+                <p class="text-gray-400 mt-2">It seems your session has expired or no files were uploaded.</p>
+                <a href="/" class="mt-6 inline-block text-lg bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition-colors">
+                    Start Over
+                </a>
             </div>
-        {% endif %}
+        {% else %}
+            <!-- Global Actions -->
+            <div class="mb-6">
+                <button id="merge-tables-btn" class="bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors disabled:bg-gray-600 disabled:cursor-not-allowed">
+                    <i class="fas fa-compress-arrows-alt mr-2"></i>Merge Tables
+                </button>
+            </div>
 
-        {% if tables %}
             {% for file_key, table_data in tables.items() %}
-                <div class="data-section">
-                    <h2>{{ original_names[file_key + '_name'] }}</h2>
-                    <div class="table-actions">
-                        <div>
-                            <button class="add-btn add-row-btn" data-file-key="{{ file_key }}"><i class="fas fa-plus"></i> Add Row</button>
-                            <button class="add-btn add-column-btn" data-file-key="{{ file_key }}"><i class="fas fa-plus"></i> Add Column</button>
-                            <button class="warn-btn count-mode-btn" data-file-key="{{ file_key }}"><i class="fas fa-calculator"></i> Count Mode</button>
-                        </div>
-                        <div>
-                             <button class="save-btn save-changes-btn" data-file-key="{{ file_key }}"><i class="fas fa-save"></i> Save Changes</button>
-                             <button class="warn-btn download-btn" data-file-key="{{ file_key }}" data-original-file-name="{{ original_names[file_key + '_name'] }}"><i class="fas fa-download"></i> Download CSV</button>
-                        </div>
+            <div class="bg-gray-800 rounded-lg shadow-xl mb-8 overflow-hidden" data-file-key="{{ file_key }}">
+                <!-- Table Header -->
+                <div class="p-4 bg-gray-700/50 border-b border-gray-600 flex flex-wrap justify-between items-center gap-4">
+                    <h2 class="text-xl font-bold text-white truncate">{{ table_data.original_name }}</h2>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <button class="save-changes-btn bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 text-sm rounded-lg transition-colors disabled:bg-gray-600 disabled:cursor-not-allowed" disabled>
+                            <i class="fas fa-save mr-2"></i>Save Changes
+                        </button>
+                        <button class="add-row-btn bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 text-sm rounded-lg transition-colors">
+                            <i class="fas fa-plus mr-2"></i>Add Row
+                        </button>
+                        <button class="add-column-btn bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 text-sm rounded-lg transition-colors">
+                            <i class="fas fa-plus mr-2"></i>Add Column
+                        </button>
+                         <button class="find-replace-btn bg-yellow-500 hover:bg-yellow-600 text-black font-semibold py-2 px-4 text-sm rounded-lg transition-colors">
+                            <i class="fas fa-search mr-2"></i>Find/Replace
+                        </button>
+                        <button class="visualize-btn bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-2 px-4 text-sm rounded-lg transition-colors">
+                            <i class="fas fa-chart-bar mr-2"></i>Visualize
+                        </button>
+                        <a href="/download/{{ file_key }}" class="download-btn bg-gray-600 hover:bg-gray-500 text-white font-semibold py-2 px-4 text-sm rounded-lg transition-colors">
+                            <i class="fas fa-download mr-2"></i>Download
+                        </a>
                     </div>
-                    <table id="{{ file_key }}_table" class="display">
+                </div>
+                <!-- Table Body -->
+                <div class="p-4 overflow-x-auto">
+                    <table id="{{ file_key }}_table" class="display compact" style="width:100%">
                         <thead>
-                            <!-- Column controls row (filters and delete buttons) -->
-                            <tr class="column-controls">
-                                {% for header in table_data.headers %}
-                                    <th style="position: relative;">
-                                        <input type="text" placeholder="Filter {{ header }}" class="column-filter" data-column="{{ loop.index0 }}" />
-                                        <button class="column-delete-btn" data-col-name="{{ header }}" title="Delete column {{ header }}">
-                                            <i class="fas fa-times"></i>
-                                        </button>
-                                    </th>
-                                {% endfor %}
-                                <th style="text-align: center; color: #666; font-size: 0.8em;">Filters & Actions</th>
-                            </tr>
-                            <!-- Regular header row -->
                             <tr>
                                 {% for header in table_data.headers %}
-                                    <th>{{ header }}</th>
+                                    <th class="text-white">
+                                        {{ header }}
+                                        <i class="fas fa-times-circle delete-col-icon text-gray-500 hover:text-red-500 ml-2 cursor-pointer" data-col-name="{{ header }}"></i>
+                                    </th>
                                 {% endfor %}
-                                <th>Actions</th>
+                                <th class="text-white">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for row in table_data.data %}
-                                <tr data-row-index="{{ loop.index0 }}">
+                                <tr>
                                     {% for cell in row %}
-                                        <td class="editable">{{ cell }}</td>
+                                        <td class="editable border-gray-700">{{ cell }}</td>
                                     {% endfor %}
-                                    <td>
-                                        <i class="fas fa-trash-alt action-icon delete-row-icon"></i>
+                                    <td class="text-center border-gray-700">
+                                        <i class="fas fa-trash-alt action-icon delete-row-icon text-gray-500"></i>
                                     </td>
                                 </tr>
                             {% endfor %}
                         </tbody>
                     </table>
                 </div>
+            </div>
             {% endfor %}
-        {% else %}
-            <p>No CSV data to display. Please <a href="/">upload files</a> first.</p>
         {% endif %}
-    </div>
+    </main>
 
-    <div id="countModeModal" class="modal">
-        <div class="modal-content">
-            <span class="close-button">&times;</span>
-            <h2>Count Occurrences per Field</h2>
-            <div class="modal-body">
-                <p>Select a column to view the count of unique values.</p>
-                <select id="countColumnSelect">
-                    </select>
-                <button id="getColumnCountsBtn">Get Counts</button>
-                <div id="countResults">
-                    <table id="count-results-table">
-                        <thead>
-                            <tr>
-                                <th>Value</th>
-                                <th>Count</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            </tbody>
-                    </table>
-                    <p id="countError" style="color: red; display: none;"></p>
-                </div>
+    <!-- Generic Modal -->
+    <div id="modal" class="modal fixed inset-0 bg-black bg-opacity-70 z-50 items-center justify-center p-4">
+        <div class="modal-content bg-gray-800 rounded-lg shadow-xl w-full max-w-lg border border-gray-700">
+            <div class="modal-header p-4 border-b border-gray-700 flex justify-between items-center">
+                <h3 class="text-xl font-bold text-white">Modal Title</h3>
+                <button class="modal-close text-gray-400 hover:text-white">&times;</button>
+            </div>
+            <div class="modal-body p-6 text-gray-300">
+                <!-- Modal content goes here -->
+            </div>
+            <div class="modal-footer p-4 bg-gray-900/50 border-t border-gray-700 text-right space-x-2">
+                <button class="modal-btn-secondary bg-gray-600 hover:bg-gray-500 text-white font-semibold py-2 px-4 rounded-lg transition-colors">Cancel</button>
+                <button class="modal-btn-primary bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors">Confirm</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Chart Modal -->
+    <div id="chart-modal" class="modal fixed inset-0 bg-black bg-opacity-70 z-50 items-center justify-center p-4">
+        <div class="modal-content bg-gray-800 rounded-lg shadow-xl w-full max-w-3xl border border-gray-700">
+             <div class="modal-header p-4 border-b border-gray-700 flex justify-between items-center">
+                <h3 class="text-xl font-bold text-white">Column Visualization</h3>
+                <button class="modal-close text-gray-400 hover:text-white">&times;</button>
+            </div>
+            <div class="p-6">
+                <canvas id="data-chart"></canvas>
             </div>
         </div>
     </div>
 
 
-    <script type="text/javascript" src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-    <script type="text/javascript" src="https://cdn.datatables.net/2.0.8/js/dataTables.min.js"></script>
-    <script>
-        $(document).ready(function() {
-            const sessionId = {{ session_id|tojson }};
-            const changesToSave = {}; // Stores changes per file_key: {file_key: [{type: 'edit', ...}, {type: 'add_row', ...}]}
+<script>
+$(document).ready(function() {
+    // --- App State & Config ---
+    const App = {
+        changes: {},
+        dataTables: {},
+        
+        init() {
+            this.initDataTables();
+            this.bindGlobalActions();
+            this.bindTableActions();
+            this.bindModalControls();
+            this.updateMergeButtonState();
+        },
 
-            function initializeDataTable(tableId, fileKey) {
-                // Destroy existing DataTable instance if it exists
-                if ($.fn.DataTable.isDataTable(tableId)) {
-                    $(tableId).DataTable().destroy();
-                    // Clear previously added column filter row
-                    $(tableId + ' thead tr:eq(1)').remove(); // Remove the filter row if it exists
-                }
-
-                // Initialize DataTables
-                var dataTable = $(tableId).DataTable({
-                    "paging": true,
-                    "searching": true,
-                    "ordering": true,
-                    "info": true,
-                    "lengthMenu": [ [10, 25, 50, 100, -1], [10, 25, 50, 100, "All"] ],
-                    "autoWidth": false, // Prevent DataTables from calculating fixed widths
-                    "scrollX": true,    // Enable horizontal scrolling for wide tables
-                    "scrollCollapse": true, // Adjust table height to fit visible rows
-                    "fixedColumns": { // Keep first/last columns visible if scrolling
-                        leftColumns: 0,
-                        rightColumns: 1 // For the Actions column
-                    },
+        // --- DataTable Initialization ---
+        initDataTables() {
+            $('table.display').each((_, tableEl) => {
+                const fileKey = $(tableEl).closest('[data-file-key]').data('file-key');
+                const dt = $(tableEl).DataTable({
+                    responsive: true,
+                    scrollX: true,
                     "columnDefs": [
-                        { "orderable": false, "targets": -1 }, // Disable ordering on the Actions column
-                        { "searchable": false, "targets": -1 }, // Disable searching on the Actions column
-                        { "orderable": false, "targets": "_all", "className": "no-sort" } // Disable ordering on filter row
-                    ],
-                    "orderCellsTop": true, // Use the second row (actual headers) for sorting
-                    "fixedHeader": false // Disable fixed header to avoid conflicts
+                        { "orderable": false, "targets": -1 } // Disable sorting on Actions column
+                    ]
                 });
-
-                // Set up individual column filtering from the filter row
-                $(tableId + ' .column-filter').each(function(i) {
-                    $(this).on('keyup change', function () {
-                        const columnIndex = $(this).data('column');
-                        if (dataTable.column(columnIndex).search() !== this.value) {
-                            dataTable
-                                .column(columnIndex)
-                                .search(this.value)
-                                .draw();
-                        }
-                    });
-                });
-
-                // --- In-place Cell Editing ---
-                $(tableId + ' tbody').off('dblclick', 'td.editable').on('dblclick', 'td.editable', function() {
-                    const $cell = $(this);
-                    if ($cell.hasClass('editing')) return; // Prevent multiple edits
-                    
-                    const originalText = $cell.text();
-                    const columnIndex = dataTable.cell(this).index().column;
-                    // Get column name from the actual header row (second row, index 1)
-                    const columnHeader = $(tableId + ' thead tr').eq(1).find('th').eq(columnIndex);
-                    const colName = columnHeader.text().trim();
-
-                    const rowIndex = dataTable.row($cell.closest('tr')).index(); // DataTables' internal row index
-                    
-                    $cell.addClass('editing');
-                    $cell.html(`<input type="text" value="${escapeHtml(originalText)}">`);
-                    const $input = $cell.find('input');
-                    $input.focus();
-
-                    function saveEdit() {
-                        const newText = $input.val();
-                        if (newText !== originalText) {
-                            // Record change
-                            const change = {
-                                type: 'edit',
-                                row_index: rowIndex, // Use DataTables internal index
-                                col_name: colName,
-                                original_value: originalText,
-                                new_value: newText
-                            };
-                            changesToSave[fileKey] = changesToSave[fileKey] || [];
-                            changesToSave[fileKey].push(change);
-                            console.log(`Recorded edit: ${JSON.stringify(change)}`);
-                        }
-                        $cell.removeClass('editing');
-                        $cell.text(newText);
-                    }
-
-                    $input.on('blur', saveEdit); // Save on blur
-                    $input.on('keypress', function(e) {
-                        if (e.which === 13) { // Enter key
-                            saveEdit();
-                            $input.off('blur'); // Prevent blur from triggering again
-                        }
-                    });
-                });
-
-                // Helper function to start editing a cell
-                function startCellEdit($cell) {
-                    if ($cell.hasClass('editing') || !$cell.hasClass('editable')) return;
-                    $cell.trigger('dblclick');
-                }
-
-                // --- Row Deletion ---
-                $(tableId).on('click', '.delete-row-icon', function() {
-                    if (!confirm("Are you sure you want to delete this row?")) {
-                        return;
-                    }
-                    const $tr = $(this).closest('tr');
-                    const rowIndex = dataTable.row($tr).index(); // Get DataTables' internal index
-                    
-                    const change = {
-                        type: 'delete_row',
-                        row_indices: [rowIndex] // Store index for backend
-                    };
-                    changesToSave[fileKey] = changesToSave[fileKey] || [];
-                    changesToSave[fileKey].push(change);
-                    console.log(`Recorded delete row: ${JSON.stringify(change)}`);
-
-                    // Immediately remove from DataTables and re-draw
-                    dataTable.row($tr).remove().draw();
-                });
-
-                // --- Row Addition ---
-                $('.add-row-btn[data-file-key="' + fileKey + '"]').off('click').on('click', function() {
-                    const numCols = dataTable.columns().count() -1 ; // Exclude the 'Actions' column
-                    const newRowData = Array(numCols).fill(''); // Create an array of empty strings
-                    
-                    // Add the actions column cell data (the trash icon)
-                    newRowData.push('<i class="fas fa-trash-alt action-icon delete-row-icon"></i>');
-
-                    // Add row to DataTables
-                    const addedRowNode = dataTable.row.add(newRowData).draw(false).node(); // 'false' to not redraw fully
-                    
-                    // Mark new row for immediate editing
-                    $(addedRowNode).addClass('newly-added');
-                    $(addedRowNode).find('td.editable').addClass('newly-added');
-                    
-                    // Record change
-                    const change = {
-                        type: 'add_row'
-                    };
-                    changesToSave[fileKey] = changesToSave[fileKey] || [];
-                    changesToSave[fileKey].push(change);
-                    console.log(`Recorded add row: ${JSON.stringify(change)}`);
-
-                    // Go to last page and start editing first cell of new row
-                    dataTable.page('last').draw('page'); // Go to last page to see new row
-                    
-                    // Auto-start editing the first cell of the new row
-                    setTimeout(() => {
-                        const $firstCell = $(addedRowNode).find('td.editable').first();
-                        if ($firstCell.length) {
-                            startCellEdit($firstCell);
-                        }
-                    }, 100);
-                });
-
-                // --- Column Deletion ---
-                $(tableId).on('click', '.column-delete-btn', function() {
-                    const colName = $(this).data('col-name');
-                    if (!confirm("Are you sure you want to delete column '" + colName + "'? This cannot be undone without saving changes.")) {
-                        return;
-                    }
-                    
-                    // Find the column index by name
-                    const columnIndex = $(tableId + ' thead tr').eq(1).find('th').index($(tableId + ' thead tr').eq(1).find('th').filter(function() {
-                        return $(this).text().trim() === colName;
-                    }));
-
-                    if (columnIndex === -1) {
-                        alert("Could not find column to delete.");
-                        return;
-                    }
-
-                    const change = {
-                        type: 'delete_column',
-                        col_name: colName
-                    };
-                    changesToSave[fileKey] = changesToSave[fileKey] || [];
-                    changesToSave[fileKey].push(change);
-                    console.log(`Recorded delete column: ${JSON.stringify(change)}`);
-
-                    // Immediately hide the column in the UI
-                    dataTable.column(columnIndex).visible(false);
-                    // Also hide the filter and delete button for this column
-                    $(tableId + ' thead tr').eq(0).find('th').eq(columnIndex).hide();
-                    alert(`Column "${colName}" marked for deletion. Click 'Save Changes' to finalize and reload.`);
-                });
-
-
-                // --- Column Addition ---
-                $('.add-column-btn[data-file-key="' + fileKey + '"]').off('click').on('click', function() {
-                    let newColName = prompt("Enter new column name:");
-                    if (!newColName) {
-                        return;
-                    }
-                    newColName = newColName.trim();
-                    if (newColName === '') {
-                        alert("Column name cannot be empty.");
-                        return;
-                    }
-
-                    // Check if column already exists
-                    const existingHeaders = $(tableId + ' thead tr').eq(1).find('th').map(function() {
-                        return $(this).text().trim();
-                    }).get().slice(0, -1); // Exclude the Actions column
-                    
-                    if (existingHeaders.includes(newColName)) {
-                        alert(`Column "${newColName}" already exists.`);
-                        return;
-                    }
-
-                    // Record change
-                    const change = {
-                        type: 'add_column',
-                        new_col_name: newColName
-                    };
-                    changesToSave[fileKey] = changesToSave[fileKey] || [];
-                    changesToSave[fileKey].push(change);
-                    console.log(`Recorded add column: ${JSON.stringify(change)}`);
-
-                    // Alert user to save changes to see the new column fully.
-                    // A full page reload is the most reliable way to display new columns with DataTables.
-                    if (confirm(`Column "${newColName}" will be added. Click 'Save Changes' to finalize and reload the page. Would you like to save now?`)) {
-                        $('.save-changes-btn[data-file-key="' + fileKey + '"]').trigger('click');
-                    }
-                });
-
-
-                // --- Save Changes Button ---
-                $('.save-changes-btn[data-file-key="' + fileKey + '"]').off('click').on('click', function() {
-                    if (!changesToSave[fileKey] || changesToSave[fileKey].length === 0) {
-                        alert("No changes to save for this file.");
-                        return;
-                    }
-
-                    if (!confirm("Are you sure you want to save these changes? This will permanently modify the CSV.")) {
-                        return;
-                    }
-
-                    $.ajax({
-                        url: '/update_csv_data',
-                        type: 'POST',
-                        contentType: 'application/json',
-                        data: JSON.stringify({
-                            session_id: sessionId,
-                            file_key: fileKey,
-                            changes: changesToSave[fileKey]
-                        }),
-                        success: function(response) {
-                            if (response.status === 'success') {
-                                alert("Changes saved successfully! The page will now reload to reflect all changes.");
-                                changesToSave[fileKey] = []; // Clear recorded changes
-                                window.location.reload(); // Simplest way to re-render DataTables with new columns/rows/structure
-                            } else {
-                                alert("Error saving changes: " + response.message);
-                            }
-                        },
-                        error: function(jqXHR, textStatus, errorThrown) {
-                            alert('AJAX Error saving changes: ' + (jqXHR.responseJSON ? jqXHR.responseJSON.message : errorThrown));
-                            console.error('Error saving changes:', textStatus, errorThrown, jqXHR.responseText);
-                        }
-                    });
-                });
-            }
-
-            // Initialize DataTables for each table on the page
-            {% for file_key, table_data in tables.items() %}
-                initializeDataTable('#{{ file_key }}_table', '{{ file_key }}');
-            {% endfor %}
-
-            // --- Download Button ---
-            $('.download-btn').off('click').on('click', function() {
-                const fileKey = $(this).data('file-key');
-                const originalFileName = $(this).data('original-file-name'); // Get original name from data attribute
-                window.location.href = `/download_csv/${sessionId}/${fileKey}/${encodeURIComponent(originalFileName)}`;
+                this.dataTables[fileKey] = dt;
             });
+        },
+        
+        // --- Change Tracking ---
+        recordChange(fileKey, change) {
+            if (!this.changes[fileKey]) {
+                this.changes[fileKey] = [];
+            }
+            this.changes[fileKey].push(change);
+            this.updateSaveChangesButton(fileKey, true);
+        },
+
+        updateSaveChangesButton(fileKey, hasChanges) {
+            const button = $(`[data-file-key="${fileKey}"] .save-changes-btn`);
+            button.prop('disabled', !hasChanges);
+            if (hasChanges) {
+                button.removeClass('bg-blue-600 hover:bg-blue-700').addClass('bg-yellow-500 hover:bg-yellow-600 text-black');
+                button.find('.fa-save').addClass('fa-beat');
+            } else {
+                button.removeClass('bg-yellow-500 hover:bg-yellow-600 text-black').addClass('bg-blue-600 hover:bg-blue-700');
+                button.find('.fa-save').removeClass('fa-beat');
+            }
+        },
+
+        // --- API Calls ---
+        async performApiCall(url, data, successMsg) {
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                const result = await response.json();
+                if (result.status === 'success') {
+                    this.showToast('success', successMsg || result.message);
+                    return result;
+                } else {
+                    throw new Error(result.message);
+                }
+            } catch (error) {
+                this.showToast('error', `Operation failed: ${error.message}`);
+                return null;
+            }
+        },
+
+        // --- UI & Modals ---
+        showToast(type, message) {
+            const toast = $('<div class="fixed top-5 right-5 text-white px-6 py-3 rounded-lg shadow-lg z-[100]"></div>');
+            toast.addClass(type === 'success' ? 'bg-green-600' : 'bg-red-600');
+            toast.html(`<i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-triangle'} mr-2"></i> ${message}`);
+            $('body').append(toast);
+            toast.fadeIn().delay(3000).fadeOut(() => toast.remove());
+        },
+
+        showModal(options) {
+            const { title, body, primaryBtnText = 'Confirm', onConfirm } = options;
+            const modal = $('#modal');
+            modal.find('.modal-header h3').text(title);
+            modal.find('.modal-body').html(body);
+            modal.find('.modal-btn-primary').text(primaryBtnText);
             
-            // --- Count Counter Mode Modal Logic ---
-            const countModal = $('#countModeModal');
-            const countColumnSelect = $('#countColumnSelect');
-            const getColumnCountsBtn = $('#getColumnCountsBtn');
-            const countResultsTableBody = $('#count-results-table tbody');
-            const countError = $('#countError');
-            let currentCountFileKey = null;
+            modal.find('.modal-btn-primary').off('click').on('click', () => {
+                if (onConfirm()) {
+                   modal.removeClass('active');
+                }
+            });
+            modal.addClass('active');
+        },
 
-            $('.count-mode-btn').off('click').on('click', function() {
-                currentCountFileKey = $(this).data('file-key');
-                const tableId = '#' + currentCountFileKey + '_table';
-                const dataTable = $(tableId).DataTable();
+        // --- Event Binding ---
+        bindModalControls() {
+            $('.modal-close, .modal-btn-secondary').on('click', () => {
+                $('.modal').removeClass('active');
+            });
+        },
+
+        updateMergeButtonState() {
+            const tableCount = Object.keys(this.dataTables).length;
+            $('#merge-tables-btn').prop('disabled', tableCount < 2);
+        },
+
+        bindGlobalActions() {
+            $('#merge-tables-btn').on('click', () => {
+                const fileKeys = Object.keys(this.dataTables);
+                const options = fileKeys.map(k => `<option value="${k}">${$(`[data-file-key="${k}"] h2`).text()}</option>`).join('');
                 
-                // Populate the dropdown with column headers
-                countColumnSelect.empty();
-                countColumnSelect.append($('<option>', {
-                    value: '',
-                    text: '-- Select a Column --',
-                    disabled: true,
-                    selected: true
-                }));
-                dataTable.columns().header().each(function(header, index) {
-                    // Exclude the 'Actions' column (last one) from count mode
-                    if (index < dataTable.columns().count() - 1) {
-                        // Get column name from the actual header row (second row in thead)
-                        const colName = $(tableId + ' thead tr').eq(1).find('th').eq(index).text().trim();
-                        countColumnSelect.append($('<option>', {
-                            value: colName,
-                            text: colName
-                        }));
-                    }
-                });
+                const getColumnsForFile = (fileKey) => {
+                    const headers = this.dataTables[fileKey].columns().header().toArray().map(h => $(h).text().trim());
+                    return headers.slice(0, -1).map(h => `<option value="${h}">${h}</option>`).join('');
+                };
 
-                countResultsTableBody.empty(); // Clear previous results
-                countError.hide(); // Hide previous errors
-                countModal.css('display', 'flex'); // Show modal
-            });
+                const body = `
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-400 mb-1">Left Table</label>
+                            <select id="merge-file1" class="w-full bg-gray-700 border border-gray-600 rounded-md p-2">${options}</select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-400 mb-1">Left Column</label>
+                            <select id="merge-col1" class="w-full bg-gray-700 border border-gray-600 rounded-md p-2"></select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-400 mb-1">Right Table</label>
+                            <select id="merge-file2" class="w-full bg-gray-700 border border-gray-600 rounded-md p-2">${options}</select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-400 mb-1">Right Column</label>
+                            <select id="merge-col2" class="w-full bg-gray-700 border border-gray-600 rounded-md p-2"></select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-400 mb-1">Join Type</label>
+                            <select id="merge-how" class="w-full bg-gray-700 border border-gray-600 rounded-md p-2">
+                                <option value="inner">Inner Join</option>
+                                <option value="left">Left Join</option>
+                                <option value="right">Right Join</option>
+                                <option value="outer">Outer Join</option>
+                            </select>
+                        </div>
+                    </div>`;
 
-            // Close modal button
-            $('.close-button').off('click').on('click', function() {
-                countModal.hide();
-            });
-
-            // Close modal when clicking outside
-            $(window).on('click', function(event) {
-                if ($(event.target).is(countModal)) {
-                    countModal.hide();
-                }
-            });
-
-            // Get Counts button inside modal
-            getColumnCountsBtn.off('click').on('click', function() {
-                const selectedColumn = countColumnSelect.val();
-                if (!selectedColumn) {
-                    countError.text('Please select a column.').show();
-                    countResultsTableBody.empty();
-                    return;
-                }
-                countError.hide();
-
-                $.ajax({
-                    url: '/get_column_counts',
-                    type: 'POST',
-                    contentType: 'application/json',
-                    data: JSON.stringify({
-                        session_id: sessionId,
-                        file_key: currentCountFileKey,
-                        column_name: selectedColumn
-                    }),
-                    success: function(response) {
-                        if (response.status === 'success') {
-                            countResultsTableBody.empty();
-                            if (response.counts.length > 0) {
-                                response.counts.forEach(item => {
-                                    countResultsTableBody.append(`
-                                        <tr>
-                                            <td>${escapeHtml(item.Value)}</td>
-                                            <td>${escapeHtml(item.Count)}</td>
-                                        </tr>
-                                    `);
-                                });
-                            } else {
-                                countResultsTableBody.append('<tr><td colspan="2">No unique values found or column is empty.</td></tr>');
-                            }
-                        } else {
-                            countError.text('Error getting counts: ' + response.message).show();
-                            countResultsTableBody.empty();
+                this.showModal({
+                    title: 'Merge Tables',
+                    body: body,
+                    primaryBtnText: 'Merge',
+                    onConfirm: async () => {
+                        const data = {
+                            file_key1: $('#merge-file1').val(), file_key2: $('#merge-file2').val(),
+                            column1: $('#merge-col1').val(), column2: $('#merge-col2').val(),
+                            how: $('#merge-how').val()
+                        };
+                        if (data.file_key1 === data.file_key2) {
+                            this.showToast('error', 'Cannot merge a table with itself.');
+                            return false;
                         }
-                    },
-                    error: function(jqXHR, textStatus, errorThrown) {
-                        countError.text('AJAX Error getting counts: ' + (jqXHR.responseJSON ? jqXHR.responseJSON.message : errorThrown)).show();
-                        countResultsTableBody.empty();
-                        console.error('Error getting column counts:', textStatus, errorThrown, jqXHR.responseText);
+                        if (!data.column1 || !data.column2) {
+                            this.showToast('error', 'Please select columns for both tables.');
+                            return false;
+                        }
+                        const result = await this.performApiCall('/api/merge_tables', data, 'Merge successful! Reloading...');
+                        if (result) setTimeout(() => window.location.reload(), 1000);
+                        return true;
                     }
                 });
-            });
-        });
 
-        // Simple HTML escaping function
-        function escapeHtml(text) {
-            if (text === null || typeof text === 'undefined') {
-                return '';
+                // Populate column dropdowns dynamically
+                $('#merge-file1, #merge-file2').on('change', function() {
+                    const fileKey = $(this).val();
+                    const targetCol = $(this).attr('id') === 'merge-file1' ? '#merge-col1' : '#merge-col2';
+                    $(targetCol).html(getColumnsForFile(fileKey));
+                }).trigger('change');
+            });
+        },
+
+        bindTableActions() {
+            const self = this;
+            $('table.display').each(function() {
+                const tableEl = this;
+                const fileKey = $(tableEl).closest('[data-file-key]').data('file-key');
+                const container = $(tableEl).closest('[data-file-key]');
+
+                // Save Changes
+                container.find('.save-changes-btn').on('click', async () => {
+                    const result = await self.performApiCall('/api/update_data', { file_key: fileKey, changes: self.changes[fileKey] });
+                    if (result) {
+                        self.changes[fileKey] = [];
+                        self.updateSaveChangesButton(fileKey, false);
+                        // Check if a reload is needed (e.g., column changes)
+                        if (result.reload_required) {
+                           self.showToast('success', 'Structural change saved. Reloading page...');
+                           setTimeout(() => window.location.reload(), 1500);
+                        }
+                    }
+                });
+
+                // Add Row
+                container.find('.add-row-btn').on('click', () => {
+                    const dt = self.dataTables[fileKey];
+                    const newRowData = Array(dt.columns().count() - 1).fill('');
+                    newRowData.push('<i class="fas fa-trash-alt action-icon delete-row-icon text-gray-500"></i>');
+                    dt.row.add(newRowData).draw();
+                    self.recordChange(fileKey, { type: 'add_row' });
+                });
+                
+                // Add Column
+                container.find('.add-column-btn').on('click', () => {
+                    self.showModal({
+                        title: 'Add New Column',
+                        body: '<input type="text" id="new-col-name" class="w-full bg-gray-700 border border-gray-600 rounded-md p-2" placeholder="Enter column name">',
+                        primaryBtnText: 'Add',
+                        onConfirm: () => {
+                            const newColName = $('#new-col-name').val().trim();
+                            if (!newColName) {
+                                self.showToast('error', 'Column name cannot be empty.');
+                                return false;
+                            }
+                            self.recordChange(fileKey, { type: 'add_column', col_name: newColName });
+                            self.showToast('success', `Column '${newColName}' will be added on save. Page will reload.`);
+                            // Mark for reload
+                            if(!self.changes[fileKey].find(c => c.reload_required)) {
+                                self.changes[fileKey].push({reload_required: true});
+                            }
+                            return true;
+                        }
+                    });
+                });
+                
+                // Find/Replace
+                container.find('.find-replace-btn').on('click', () => {
+                    const headers = self.dataTables[fileKey].columns().header().toArray().map(h => $(h).text().trim());
+                    const colOptions = headers.slice(0, -1).map(h => `<option value="${h}">${h}</option>`).join('');
+                    const body = `
+                        <div class="space-y-4">
+                            <div><label class="block text-sm font-medium text-gray-400 mb-1">Find</label><input type="text" id="find-val" class="w-full bg-gray-700 border border-gray-600 rounded-md p-2"></div>
+                            <div><label class="block text-sm font-medium text-gray-400 mb-1">Replace with</label><input type="text" id="replace-val" class="w-full bg-gray-700 border border-gray-600 rounded-md p-2"></div>
+                             <div><label class="block text-sm font-medium text-gray-400 mb-1">In Column (optional)</label><select id="replace-col" class="w-full bg-gray-700 border border-gray-600 rounded-md p-2"><option value="">All Columns</option>${colOptions}</select></div>
+                        </div>`;
+                    self.showModal({
+                        title: 'Find and Replace',
+                        body: body,
+                        primaryBtnText: 'Replace All',
+                        onConfirm: async () => {
+                            const data = {
+                                type: 'find_replace',
+                                find: $('#find-val').val(),
+                                replace: $('#replace-val').val(),
+                                col_name: $('#replace-col').val()
+                            };
+                            if (!data.find) {
+                                self.showToast('error', 'Find value cannot be empty.');
+                                return false;
+                            }
+                            // This is a destructive action, so we can send it immediately
+                            const result = await self.performApiCall('/api/update_data', { file_key: fileKey, changes: [data] }, 'Replacement successful! Reloading...');
+                            if (result) setTimeout(() => window.location.reload(), 1000);
+                            return true;
+                        }
+                    });
+                });
+
+                // Visualize
+                container.find('.visualize-btn').on('click', () => {
+                    const headers = self.dataTables[fileKey].columns().header().toArray().map(h => $(h).text().trim());
+                    const colOptions = headers.slice(0, -1).map(h => `<option value="${h}">${h}</option>`).join('');
+                     const body = `
+                        <div>
+                            <label class="block text-sm font-medium text-gray-400 mb-1">Select column to visualize</label>
+                            <select id="vis-col" class="w-full bg-gray-700 border border-gray-600 rounded-md p-2">${colOptions}</select>
+                        </div>`;
+
+                    self.showModal({
+                        title: 'Visualize Column',
+                        body: body,
+                        primaryBtnText: 'Generate Chart',
+                        onConfirm: async () => {
+                            const colName = $('#vis-col').val();
+                            const result = await self.performApiCall('/api/get_column_summary', { file_key: fileKey, column_name: colName });
+                            if (result) {
+                                self.renderChart(result);
+                                $('#chart-modal').addClass('active');
+                            }
+                            return true;
+                        }
+                    });
+                });
+
+                // Delete Column
+                $(tableEl).on('click', '.delete-col-icon', function() {
+                    const colName = $(this).data('col-name');
+                    self.showModal({
+                        title: 'Delete Column',
+                        body: `Are you sure you want to delete the column "<strong>${colName}</strong>"? This will require a save and page reload.`,
+                        primaryBtnText: 'Delete',
+                        onConfirm: () => {
+                            self.recordChange(fileKey, { type: 'delete_column', col_name: colName });
+                            if(!self.changes[fileKey].find(c => c.reload_required)) {
+                                self.changes[fileKey].push({reload_required: true});
+                            }
+                            self.showToast('success', `Column '${colName}' will be deleted on save.`);
+                            return true;
+                        }
+                    });
+                });
+
+                // Delete Row
+                $(tableEl).on('click', '.delete-row-icon', function() {
+                    const row = $(this).closest('tr');
+                    const dt = self.dataTables[fileKey];
+                    const rowIndex = dt.row(row).index();
+                    self.recordChange(fileKey, { type: 'delete_row', row_index: rowIndex });
+                    dt.row(row).remove().draw();
+                });
+
+                // Cell Editing
+                $(tableEl).on('dblclick', 'td.editable', function() {
+                    const cell = $(this);
+                    if (cell.hasClass('editing')) return;
+
+                    const dt = self.dataTables[fileKey];
+                    const originalText = cell.text();
+                    const rowIndex = dt.row(cell.closest('tr')).index();
+                    const colIndex = dt.cell(this).index().column;
+                    const colName = $(dt.column(colIndex).header()).text().trim();
+
+                    cell.addClass('editing').html(`<input type="text" value="${originalText}">`);
+                    const input = cell.find('input');
+                    input.focus();
+
+                    const saveEdit = () => {
+                        const newText = input.val();
+                        cell.removeClass('editing').text(newText);
+                        if (newText !== originalText) {
+                            self.recordChange(fileKey, {
+                                type: 'edit',
+                                row_index: rowIndex,
+                                col_name: colName,
+                                new_value: newText
+                            });
+                        }
+                    };
+                    input.on('blur', saveEdit).on('keypress', e => e.which === 13 && saveEdit());
+                });
+            });
+        },
+        
+        // --- Charting ---
+        chartInstance: null,
+        renderChart(summary) {
+            if (this.chartInstance) {
+                this.chartInstance.destroy();
             }
-            return String(text).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+            const ctx = document.getElementById('data-chart').getContext('2d');
+            this.chartInstance = new Chart(ctx, {
+                type: summary.type === 'histogram' ? 'bar' : 'bar',
+                data: {
+                    labels: summary.labels,
+                    datasets: [{
+                        label: 'Count',
+                        data: summary.data,
+                        backgroundColor: 'rgba(59, 130, 246, 0.5)',
+                        borderColor: 'rgba(59, 130, 246, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    scales: { y: { beginAtZero: true, ticks: { color: '#d1d5db' } }, x: { ticks: { color: '#d1d5db' } } },
+                    plugins: { legend: { labels: { color: '#d1d5db' } } }
+                }
+            });
         }
-    </script>
+    };
+
+    App.init();
+});
+</script>
+
 </body>
 </html>
