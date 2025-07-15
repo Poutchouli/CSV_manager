@@ -28,7 +28,7 @@
         .dataTables_wrapper .dataTables_paginate .paginate_button.current { background: #1f2937 !important; border-color: #3b82f6 !important; color: #eff6ff !important; }
         table.dataTable { border-color: #374151; }
         table.dataTable thead th, table.dataTable thead td { border-bottom-color: #4b5563 !important; }
-        table.dataTable tbody td { color: #d1d5db; border-top-color: #374151 !important; }
+        table.dataTable tbody td { color: #d1d5db; border-top-color: #374151 !important; transition: background-color 0.3s; }
         table.dataTable tbody tr:hover { background-color: #1f2937 !important; }
         td.editable { cursor: cell; }
         td.editing input { width: 100%; padding: 6px; box-sizing: border-box; background-color: #1e40af; color: white; border: 1px solid #3b82f6; border-radius: 4px; }
@@ -38,12 +38,22 @@
         .modal { display: none; }
         .modal.active { display: flex; }
 
+        /* Change Tracking Styles */
+        .cell-edited { background-color: #4a4a28 !important; }
+        .row-deleted { opacity: 0.5; background-color: #3a1a1a !important; }
+        .row-deleted td { text-decoration: line-through; }
+        .revert-icon { cursor: pointer; color: #6ee7b7; margin-left: 8px; }
+        .revert-icon:hover { color: #a7f3d0; }
+
+
         /* Grouping Styles */
         tr.dtrg-group { background-color: #374151 !important; font-weight: bold; cursor: pointer; }
         tr.dtrg-group:hover { background-color: #4b5563 !important; }
         tr.dtrg-group td { border-bottom: 2px solid #111827; }
         .expand-group-icon { transition: transform 0.2s ease-in-out; }
-        .group-header.collapsed .expand-group-icon { transform: rotate(-90deg); }
+        tr.dtrg-group.collapsed .expand-group-icon { transform: rotate(-90deg); }
+        tr.dtrg-group.group-deleted { opacity: 0.5; background-color: #3a1a1a !important; }
+        tr.dtrg-group.group-deleted strong { text-decoration: line-through; }
     </style>
 </head>
 <body class="text-gray-200">
@@ -53,28 +63,35 @@
         <h1 class="text-2xl font-bold text-white">
             <i class="fas fa-file-csv text-blue-400"></i> CSV Power Tool
         </h1>
-        <a href="/" class="text-sm bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors">
-            <i class="fas fa-upload mr-2"></i>Upload New Files
-        </a>
+        <div class="flex items-center gap-4">
+             <div id="lang-switcher" class="text-sm">
+                <button data-lang="en" class="lang-btn font-semibold text-gray-400 hover:text-white">EN</button>
+                <span class="text-gray-500">/</span>
+                <button data-lang="fr" class="lang-btn font-semibold text-gray-400 hover:text-white">FR</button>
+            </div>
+            <a href="/" class="text-sm bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors" data-lang-key="uploadNew">
+                <i class="fas fa-upload mr-2"></i><span class="btn-text">Upload New Files</span>
+            </a>
+        </div>
     </header>
 
     <main class="p-4 md:p-6 lg:p-8">
         {% if not tables %}
             <div class="text-center bg-gray-800 p-10 rounded-lg">
-                <h2 class="text-2xl font-semibold text-white">No files to display.</h2>
-                <p class="text-gray-400 mt-2">It seems your session has expired or no files were uploaded.</p>
-                <a href="/" class="mt-6 inline-block text-lg bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition-colors">
-                    Start Over
+                <h2 class="text-2xl font-semibold text-white" data-lang-key="noFilesTitle">No files to display.</h2>
+                <p class="text-gray-400 mt-2" data-lang-key="noFilesSubtitle">It seems your session has expired or no files were uploaded.</p>
+                <a href="/" class="mt-6 inline-block text-lg bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition-colors" data-lang-key="startOver">
+                    <span class="btn-text">Start Over</span>
                 </a>
             </div>
         {% else %}
             <!-- Global Actions -->
             <div class="mb-6 flex flex-wrap gap-2">
-                <button id="merge-tables-btn" class="bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors disabled:bg-gray-600 disabled:cursor-not-allowed">
-                    <i class="fas fa-compress-arrows-alt mr-2"></i>Merge Tables
+                <button id="merge-tables-btn" class="bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors disabled:bg-gray-600 disabled:cursor-not-allowed" data-lang-key="mergeTables">
+                    <i class="fas fa-compress-arrows-alt mr-2"></i><span class="btn-text">Merge Tables</span>
                 </button>
-                <button id="compare-tables-btn" class="bg-teal-600 hover:bg-teal-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors disabled:bg-gray-600 disabled:cursor-not-allowed">
-                    <i class="fas fa-exchange-alt mr-2"></i>Compare Tables
+                <button id="compare-tables-btn" class="bg-teal-600 hover:bg-teal-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors disabled:bg-gray-600 disabled:cursor-not-allowed" data-lang-key="compareTables">
+                    <i class="fas fa-exchange-alt mr-2"></i><span class="btn-text">Compare Tables</span>
                 </button>
             </div>
 
@@ -84,30 +101,30 @@
                 <div class="p-4 bg-gray-700/50 border-b border-gray-600 flex flex-wrap justify-between items-center gap-4">
                     <h2 class="text-xl font-bold text-white truncate">{{ table_data.original_name }}</h2>
                     <div class="flex flex-wrap items-center gap-2">
-                        <button class="save-changes-btn bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 text-sm rounded-lg transition-colors disabled:bg-gray-600 disabled:cursor-not-allowed" disabled>
-                            <i class="fas fa-save mr-2"></i>Save
+                        <button class="save-changes-btn bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 text-sm rounded-lg transition-colors disabled:bg-gray-600 disabled:cursor-not-allowed" disabled data-lang-key="saveChanges">
+                            <i class="fas fa-save mr-2"></i><span class="btn-text">Save</span>
                         </button>
-                        <button class="group-by-btn bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 px-4 text-sm rounded-lg transition-colors">
-                            <i class="fas fa-layer-group mr-2"></i>Group By
+                        <button class="group-by-btn bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 px-4 text-sm rounded-lg transition-colors" data-lang-key="groupBy">
+                            <i class="fas fa-layer-group mr-2"></i><span class="btn-text">Group By</span>
                         </button>
-                        <button class="clear-grouping-btn hidden bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 text-sm rounded-lg transition-colors">
-                            <i class="fas fa-times-circle mr-2"></i>Clear Grouping
+                        <button class="clear-grouping-btn hidden bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 text-sm rounded-lg transition-colors" data-lang-key="clearGrouping">
+                            <i class="fas fa-times-circle mr-2"></i><span class="btn-text">Clear Grouping</span>
                         </button>
                         <div class="w-px h-6 bg-gray-600"></div>
-                        <button class="add-row-btn bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 text-sm rounded-lg transition-colors">
-                            <i class="fas fa-plus mr-2"></i>Add Row
+                        <button class="add-row-btn bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 text-sm rounded-lg transition-colors" data-lang-key="addRow">
+                            <i class="fas fa-plus mr-2"></i><span class="btn-text">Add Row</span>
                         </button>
-                        <button class="add-column-btn bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 text-sm rounded-lg transition-colors">
-                            <i class="fas fa-plus mr-2"></i>Add Column
+                        <button class="add-column-btn bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 text-sm rounded-lg transition-colors" data-lang-key="addColumn">
+                            <i class="fas fa-plus mr-2"></i><span class="btn-text">Add Column</span>
                         </button>
-                        <button class="find-replace-btn bg-yellow-500 hover:bg-yellow-600 text-black font-semibold py-2 px-4 text-sm rounded-lg transition-colors">
-                            <i class="fas fa-search mr-2"></i>Find/Replace
+                        <button class="find-replace-btn bg-yellow-500 hover:bg-yellow-600 text-black font-semibold py-2 px-4 text-sm rounded-lg transition-colors" data-lang-key="findReplace">
+                            <i class="fas fa-search mr-2"></i><span class="btn-text">Find/Replace</span>
                         </button>
-                        <button class="visualize-btn bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-2 px-4 text-sm rounded-lg transition-colors">
-                            <i class="fas fa-chart-bar mr-2"></i>Visualize
+                        <button class="visualize-btn bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-2 px-4 text-sm rounded-lg transition-colors" data-lang-key="visualize">
+                            <i class="fas fa-chart-bar mr-2"></i><span class="btn-text">Visualize</span>
                         </button>
-                        <a href="/download/{{ file_key }}" class="download-btn bg-gray-600 hover:bg-gray-500 text-white font-semibold py-2 px-4 text-sm rounded-lg transition-colors">
-                            <i class="fas fa-download mr-2"></i>Download
+                        <a href="/download/{{ file_key }}" class="download-btn bg-gray-600 hover:bg-gray-500 text-white font-semibold py-2 px-4 text-sm rounded-lg transition-colors" data-lang-key="download">
+                            <i class="fas fa-download mr-2"></i><span class="btn-text">Download</span>
                         </a>
                     </div>
                 </div>
@@ -122,17 +139,18 @@
                                         <i class="fas fa-times-circle delete-col-icon text-gray-500 hover:text-red-500 cursor-pointer" data-col-name="{{ header }}"></i>
                                     </th>
                                 {% endfor %}
-                                <th class="text-white">Actions</th>
+                                <th class="text-white actions-header" data-lang-key="actionsHeader">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for row in table_data.data %}
-                                <tr>
+                                <tr data-row-id="{{ loop.index0 }}">
                                     {% for cell in row %}
                                         <td class="editable border-gray-700">{{ cell | string }}</td>
                                     {% endfor %}
                                     <td class="text-center border-gray-700">
                                         <i class="fas fa-trash-alt action-icon delete-row-icon text-gray-500"></i>
+                                        <i class="fas fa-undo action-icon revert-icon hidden"></i>
                                     </td>
                                 </tr>
                             {% endfor %}
@@ -148,14 +166,14 @@
     <div id="modal" class="modal fixed inset-0 bg-black bg-opacity-70 z-50 items-center justify-center p-4">
         <div class="modal-content bg-gray-800 rounded-lg shadow-xl w-full max-w-lg border border-gray-700">
             <div class="modal-header p-4 border-b border-gray-700 flex justify-between items-center">
-                <h3 class="text-xl font-bold text-white">Modal Title</h3>
+                <h3 class="text-xl font-bold text-white modal-title">Modal Title</h3>
                 <button class="modal-close text-gray-400 hover:text-white text-2xl leading-none">&times;</button>
             </div>
             <div class="modal-body p-6 text-gray-300">
                 <!-- Modal content goes here -->
             </div>
             <div class="modal-footer p-4 bg-gray-900/50 border-t border-gray-700 text-right space-x-2">
-                <button class="modal-btn-secondary bg-gray-600 hover:bg-gray-500 text-white font-semibold py-2 px-4 rounded-lg transition-colors">Cancel</button>
+                <button class="modal-btn-secondary bg-gray-600 hover:bg-gray-500 text-white font-semibold py-2 px-4 rounded-lg transition-colors" data-lang-key="cancel">Cancel</button>
                 <button class="modal-btn-primary bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors">Confirm</button>
             </div>
         </div>
@@ -165,7 +183,7 @@
     <div id="chart-modal" class="modal fixed inset-0 bg-black bg-opacity-70 z-50 items-center justify-center p-4">
         <div class="modal-content bg-gray-800 rounded-lg shadow-xl w-full max-w-3xl border border-gray-700">
              <div class="modal-header p-4 border-b border-gray-700 flex justify-between items-center">
-                <h3 class="text-xl font-bold text-white">Column Visualization</h3>
+                <h3 class="text-xl font-bold text-white modal-title" data-lang-key="chartModalTitle">Column Visualization</h3>
                 <button class="modal-close text-gray-400 hover:text-white text-2xl leading-none">&times;</button>
             </div>
             <div class="p-6">
@@ -182,6 +200,33 @@ $(document).ready(function() {
         changes: {},
         dataTables: {},
         groupingState: {}, // { fileKey: { colIndex: 1, colName: 'Country' } }
+        currentLanguage: 'en',
+        translations: {
+            en: {
+                uploadNew: 'Upload New Files', noFilesTitle: 'No files to display.', noFilesSubtitle: 'It seems your session has expired or no files were uploaded.', startOver: 'Start Over',
+                mergeTables: 'Merge Tables', compareTables: 'Compare Tables', saveChanges: 'Save Changes', groupBy: 'Group By', clearGrouping: 'Clear Grouping',
+                addRow: 'Add Row', addColumn: 'Add Column', findReplace: 'Find/Replace', visualize: 'Visualize', download: 'Download', actionsHeader: 'Actions',
+                cancel: 'Cancel', confirm: 'Confirm', proceed: 'Proceed',
+                mergeModalTitle: 'Merge Tables', compareModalTitle: 'Compare Tables', groupModalTitle: 'Group By Column', deleteGroupModalTitle: 'Delete Group',
+                addColumnModalTitle: 'Add New Column', deleteColumnModalTitle: 'Delete Column', findReplaceModalTitle: 'Find and Replace', visualizeModalTitle: 'Visualize Column',
+                chartModalTitle: 'Column Visualization', largeOperationTitle: 'Large Operation Warning',
+                deleteGroupBody: 'Are you sure you want to delete all rows where', is: 'is', thisActionCannotBeUndone: 'This action cannot be undone.',
+                deleteColumnBody: 'Are you sure you want to delete the column',
+                colWillBeAdded: 'will be added on save.', colWillBeDeleted: 'will be deleted on save.',
+            },
+            fr: {
+                uploadNew: 'Téléverser Fichiers', noFilesTitle: 'Aucun fichier à afficher.', noFilesSubtitle: 'Il semble que votre session a expiré ou aucun fichier n\'a été téléversé.', startOver: 'Recommencer',
+                mergeTables: 'Fusionner', compareTables: 'Comparer', saveChanges: 'Enregistrer', groupBy: 'Regrouper', clearGrouping: 'Annuler le Groupe',
+                addRow: 'Ajouter Ligne', addColumn: 'Ajouter Colonne', findReplace: 'Chercher/Remplacer', visualize: 'Visualiser', download: 'Télécharger', actionsHeader: 'Actions',
+                cancel: 'Annuler', confirm: 'Confirmer', proceed: 'Procéder',
+                mergeModalTitle: 'Fusionner les Tableaux', compareModalTitle: 'Comparer les Tableaux', groupModalTitle: 'Regrouper par Colonne', deleteGroupModalTitle: 'Supprimer le Groupe',
+                addColumnModalTitle: 'Ajouter Colonne', deleteColumnModalTitle: 'Supprimer Colonne', findReplaceModalTitle: 'Chercher et Remplacer', visualizeModalTitle: 'Visualiser la Colonne',
+                chartModalTitle: 'Visualisation de Colonne', largeOperationTitle: 'Avertissement d\'Opération Volumineuse',
+                deleteGroupBody: 'Êtes-vous sûr de vouloir supprimer toutes les lignes où', is: 'est', thisActionCannotBeUndone: 'Cette action est irréversible.',
+                deleteColumnBody: 'Êtes-vous sûr de vouloir supprimer la colonne',
+                colWillBeAdded: 'sera ajoutée lors de la sauvegarde.', colWillBeDeleted: 'sera supprimée lors de la sauvegarde.',
+            }
+        },
         
         init() {
             this.initDataTables();
@@ -189,6 +234,7 @@ $(document).ready(function() {
             this.bindTableActions();
             this.bindModalControls();
             this.updateGlobalButtonsState();
+            this.initLanguage();
         },
 
         // --- DataTable Initialization ---
@@ -197,41 +243,72 @@ $(document).ready(function() {
             
             tables.each((_, tableEl) => {
                 const fileKey = $(tableEl).closest('[data-file-key]').data('file-key');
-                if (this.dataTables[fileKey]) {
-                    this.dataTables[fileKey].destroy();
-                }
+                if (this.dataTables[fileKey]) this.dataTables[fileKey].destroy();
                 
                 const groupingInfo = this.groupingState[fileKey];
                 let dtConfig = {
-                    responsive: true,
-                    scrollX: true,
+                    responsive: true, scrollX: true,
                     columnDefs: [{ orderable: false, targets: -1 }],
                     rowGroup: groupingInfo ? { 
                         dataSrc: groupingInfo.colIndex,
                         startRender: (rows, group) => {
-                             const groupCount = rows.count();
-                             return $('<tr class="dtrg-group group-header">')
+                             return $('<tr class="dtrg-group group-header collapsed">')
                                 .append(`<td colspan="999">` +
                                     `<i class="fas fa-chevron-down expand-group-icon mr-2"></i>` +
-                                    `<strong>${group}</strong> (${groupCount} rows)` +
+                                    `<strong>${group}</strong> (${rows.count()} rows)` +
                                     `<i class="fas fa-trash-alt delete-group-icon text-gray-500 hover:text-red-500 ml-4 cursor-pointer" data-group-value="${group}"></i>` +
+                                    `<i class="fas fa-undo action-icon revert-icon hidden ml-2" title="Revert deletion"></i>` +
                                 `</td>`);
                         }
                      } : false,
-                     order: groupingInfo ? [[groupingInfo.colIndex, 'asc']] : []
+                     order: groupingInfo ? [[groupingInfo.colIndex, 'asc']] : [],
+                     drawCallback: () => {
+                         if(groupingInfo) $(`#${fileKey}_table tbody tr`).not('.dtrg-group').hide();
+                     }
                 };
-
                 this.dataTables[fileKey] = $(tableEl).DataTable(dtConfig);
             });
         },
         
+        // --- Language Handling ---
+        setLanguage(lang) {
+            if (!this.translations[lang]) return;
+            this.currentLanguage = lang;
+            
+            $('[data-lang-key]').each((_, el) => {
+                const key = $(el).data('lang-key');
+                const text = this.translations[lang][key];
+                if (text) {
+                    const textSpan = $(el).find('.btn-text');
+                    if (textSpan.length > 0) textSpan.text(text);
+                    else $(el).text(text);
+                }
+            });
+            
+            $('#lang-switcher .lang-btn').removeClass('text-white underline').addClass('text-gray-400');
+            $(`#lang-switcher .lang-btn[data-lang="${lang}"]`).removeClass('text-gray-400').addClass('text-white underline');
+            localStorage.setItem('preferredLanguage', lang);
+        },
+
+        initLanguage() {
+            const savedLang = localStorage.getItem('preferredLanguage') || 'en';
+            this.setLanguage(savedLang);
+            $('#lang-switcher').on('click', '.lang-btn', (e) => this.setLanguage($(e.currentTarget).data('lang')));
+        },
+
         // --- Change Tracking ---
         recordChange(fileKey, change) {
-            if (!this.changes[fileKey]) {
-                this.changes[fileKey] = [];
-            }
+            if (!this.changes[fileKey]) this.changes[fileKey] = [];
+            change.id = Date.now() + Math.random();
             this.changes[fileKey].push(change);
             this.updateSaveChangesButton(fileKey, true);
+            return change.id;
+        },
+        
+        removeChange(fileKey, changeId) {
+            if (!this.changes[fileKey]) return;
+            this.changes[fileKey] = this.changes[fileKey].filter(c => c.id !== changeId);
+            if (this.changes[fileKey].length === 0) this.updateSaveChangesButton(fileKey, false);
         },
 
         updateSaveChangesButton(fileKey, hasChanges) {
@@ -247,24 +324,13 @@ $(document).ready(function() {
         },
 
         // --- API Calls ---
-        async performApiCall(url, data, successMsg) {
-            try {
-                const response = await fetch(url, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
-                });
-                const result = await response.json();
-                if (result.status === 'success') {
-                    this.showToast('success', successMsg || result.message);
-                    return result;
-                } else {
-                    throw new Error(result.message);
-                }
-            } catch (error) {
-                this.showToast('error', `Operation failed: ${error.message}`);
-                return null;
-            }
+        async performApiCall(url, data) {
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            return response.json();
         },
 
         // --- UI & Modals ---
@@ -277,53 +343,47 @@ $(document).ready(function() {
         },
 
         showModal(options) {
-            const { title, body, primaryBtnText = 'Confirm', onConfirm } = options;
+            const { titleKey, body, primaryBtnKey = 'confirm', onConfirm } = options;
             const modal = $('#modal');
-            modal.find('.modal-header h3').text(title);
+            const lang = this.currentLanguage;
+
+            modal.find('.modal-title').text(this.translations[lang][titleKey] || titleKey);
             modal.find('.modal-body').html(body);
-            modal.find('.modal-btn-primary').text(primaryBtnText);
+            modal.find('.modal-btn-primary').text(this.translations[lang][primaryBtnKey] || primaryBtnKey);
             
             modal.find('.modal-btn-primary').off('click').on('click', () => {
-                if (onConfirm()) {
-                   modal.removeClass('active');
-                }
+                if (onConfirm()) modal.removeClass('active');
             });
             modal.addClass('active');
         },
 
         // --- Event Binding ---
         bindModalControls() {
-            $('.modal-close, .modal-btn-secondary').on('click', () => {
-                $('.modal').removeClass('active');
-            });
+            $('.modal-close, .modal-btn-secondary').on('click', () => $('.modal').removeClass('active'));
         },
 
         updateGlobalButtonsState() {
             const tableCount = Object.keys(this.dataTables).length;
             const disabled = tableCount < 2;
-            $('#merge-tables-btn').prop('disabled', disabled);
-            $('#compare-tables-btn').prop('disabled', disabled);
+            $('#merge-tables-btn, #compare-tables-btn').prop('disabled', disabled);
         },
 
         bindGlobalActions() {
             const self = this;
-            // Merge & Compare Handlers (omitted for brevity, they are unchanged)
-            $('#merge-tables-btn, #compare-tables-btn').on('click', function() {
+            $('#merge-tables-btn, #compare-tables-btn').on('click', async function() {
                 const isMerge = $(this).attr('id') === 'merge-tables-btn';
-                const title = isMerge ? 'Merge Tables' : 'Compare Tables';
                 const action = isMerge ? 'merge' : 'compare';
+                const titleKey = isMerge ? 'mergeModalTitle' : 'compareModalTitle';
                 const apiUrl = isMerge ? '/api/merge_tables' : '/api/compare_tables';
-                const primaryBtnText = isMerge ? 'Merge' : 'Compare';
+                
+                const getColumnsForFile = (fileKey) => {
+                    if (!self.dataTables[fileKey]) return '';
+                    return self.dataTables[fileKey].columns().header().toArray().map(h => $(h).find('span').text().trim()).map(h => `<option value="${h}">${h}</option>`).join('');
+                };
 
                 const fileKeys = Object.keys(self.dataTables);
                 const options = fileKeys.map(k => `<option value="${k}">${$(`[data-file-key="${k}"] h2`).text()}</option>`).join('');
                 
-                const getColumnsForFile = (fileKey) => {
-                    if (!self.dataTables[fileKey]) return '';
-                    const headers = self.dataTables[fileKey].columns().header().toArray().map(h => $(h).find('span').text().trim());
-                    return headers.map(h => `<option value="${h}">${h}</option>`).join('');
-                };
-
                 let body = `<div class="space-y-4">
                         <div><label class="block text-sm font-medium text-gray-400 mb-1">Table 1</label><select id="${action}-file1" class="w-full bg-gray-700 border border-gray-600 rounded-md p-2">${options}</select></div>
                         <div><label class="block text-sm font-medium text-gray-400 mb-1">Key Column from Table 1</label><select id="${action}-col1" class="w-full bg-gray-700 border border-gray-600 rounded-md p-2"></select></div>
@@ -335,23 +395,39 @@ $(document).ready(function() {
                 }
                 body += `</div>`;
 
-                self.showModal({
-                    title, body, primaryBtnText,
-                    onConfirm: async () => {
-                        let data = {
-                            file_key1: $(`#${action}-file1`).val(), file_key2: $(`#${action}-file2`).val(),
-                            column1: $(`#${action}-col1`).val(), column2: $(`#${action}-col2`).val(),
-                        };
-                        if (isMerge) data.how = $('#merge-how').val();
+                const onConfirm = async (force = false) => {
+                    let data = {
+                        file_key1: $(`#${action}-file1`).val(), file_key2: $(`#${action}-file2`).val(),
+                        column1: $(`#${action}-col1`).val(), column2: $(`#${action}-col2`).val(),
+                        force: force
+                    };
+                    if (isMerge) data.how = $('#merge-how').val();
 
-                        if (data.file_key1 === data.file_key2) { self.showToast('error', `Cannot ${action} a table with itself.`); return false; }
-                        if (!data.column1 || !data.column2) { self.showToast('error', 'Please select columns for both tables.'); return false; }
-                        
-                        const result = await self.performApiCall(apiUrl, data, `${title} successful! Reloading...`);
-                        if (result) setTimeout(() => window.location.reload(), 1500);
+                    if (data.file_key1 === data.file_key2) { self.showToast('error', `Cannot ${action} a table with itself.`); return false; }
+                    if (!data.column1 || !data.column2) { self.showToast('error', 'Please select columns for both tables.'); return false; }
+                    
+                    const result = await self.performApiCall(apiUrl, data);
+                    
+                    if (result.status === 'success') {
+                        self.showToast('success', 'Operation successful! Reloading...');
+                        setTimeout(() => window.location.reload(), 1500);
                         return true;
+                    } else if (result.status === 'confirm') {
+                        self.showModal({
+                            titleKey: 'largeOperationTitle',
+                            body: result.message,
+                            primaryBtnKey: 'proceed',
+                            onConfirm: () => onConfirm(true) // Re-call with force=true
+                        });
+                        return false; // Keep the original modal open until this one is resolved
+                    } else {
+                        self.showToast('error', result.message);
+                        return true; // Close modal on error
                     }
-                });
+                };
+                
+                self.showModal({ titleKey, body, primaryBtnKey: isMerge ? 'mergeTables' : 'compareTables', onConfirm: () => onConfirm(false) });
+                // Dynamic column population logic here...
                 $(`#${action}-file1, #${action}-file2`).on('change', function() {
                     const fileKey = $(this).val();
                     const targetCol = $(this).attr('id') === `${action}-file1` ? `#${action}-col1` : `#${action}-col2`;
@@ -375,7 +451,7 @@ $(document).ready(function() {
                     const body = `<div><label class="block text-sm font-medium text-gray-400 mb-1">Select column to group by</label><select id="group-by-col" class="w-full bg-gray-700 border border-gray-600 rounded-md p-2">${colOptions}</select></div>`;
                     
                     self.showModal({
-                        title: 'Group By Column', body, primaryBtnText: 'Group',
+                        titleKey: 'groupModalTitle', body, primaryBtnKey: 'groupBy',
                         onConfirm: () => {
                             const colIndex = $('#group-by-col').val();
                             const colName = $('#group-by-col option:selected').text();
@@ -396,57 +472,125 @@ $(document).ready(function() {
                     container.find('.clear-grouping-btn').addClass('hidden');
                 });
                 
+                // Delegated click for expanding/collapsing a group
+                tableEl.on('click', 'tr.dtrg-group', function() {
+                    if ($(this).hasClass('group-deleted')) return;
+                    $(this).toggleClass('collapsed');
+                    $(this).nextUntil('tr.dtrg-group').toggle();
+                });
+
                 // Delegated click for deleting a group
                 tableEl.on('click', '.delete-group-icon', function(e) {
-                    e.stopPropagation(); // Prevent group from expanding
+                    e.stopPropagation();
+                    const groupRow = $(this).closest('tr.dtrg-group');
+                    if (groupRow.hasClass('group-deleted')) return;
+
                     const groupValue = $(this).data('group-value');
                     const groupingInfo = self.groupingState[fileKey];
                     if (!groupingInfo) return;
                     
-                    self.showModal({
-                        title: 'Delete Group',
-                        body: `Are you sure you want to delete all rows where <strong>${groupingInfo.colName}</strong> is "<strong>${groupValue}</strong>"? This action cannot be undone.`,
-                        primaryBtnText: 'Delete Group',
-                        onConfirm: async () => {
-                            const data = {
-                                file_key: fileKey,
-                                column_name: groupingInfo.colName,
-                                group_value: groupValue
-                            };
-                            const result = await self.performApiCall('/api/delete_group', data, 'Group deleted! Reloading...');
-                            if (result) setTimeout(() => window.location.reload(), 1500);
-                            return true;
-                        }
-                    });
+                    const changeId = self.recordChange(fileKey, { type: 'delete_group', col_name: groupingInfo.colName, group_value: groupValue });
+                    groupRow.addClass('group-deleted').data('changeId', changeId);
+                    groupRow.find('.delete-group-icon').addClass('hidden');
+                    groupRow.find('.revert-icon').removeClass('hidden');
+                    groupRow.nextUntil('tr.dtrg-group').addClass('row-deleted').hide();
                 });
 
-                // Other actions (Save, Add Row, etc.) - omitted for brevity, unchanged
-                container.find('.save-changes-btn').on('click', async () => {
-                    const result = await self.performApiCall('/api/update_data', { file_key: fileKey, changes: self.changes[fileKey] });
-                    if (result) {
-                        self.changes[fileKey] = [];
-                        self.updateSaveChangesButton(fileKey, false);
-                        if (result.reload_required) {
-                           self.showToast('success', 'Structural change saved. Reloading page...');
-                           setTimeout(() => window.location.reload(), 1500);
+                // Revert Group or Row Deletion
+                tableEl.on('click', '.revert-icon', function(e) {
+                    e.stopPropagation();
+                    const groupRow = $(this).closest('tr.dtrg-group');
+                    if (groupRow.length > 0) { // It's a group revert
+                        const changeId = groupRow.data('changeId');
+                        self.removeChange(fileKey, changeId);
+                        
+                        groupRow.removeClass('group-deleted').removeData('changeId');
+                        groupRow.find('.delete-group-icon').removeClass('hidden');
+                        groupRow.find('.revert-icon').addClass('hidden');
+                        groupRow.nextUntil('tr.dtrg-group').removeClass('row-deleted');
+                        if (!groupRow.hasClass('collapsed')) {
+                            groupRow.nextUntil('tr.dtrg-group').show();
                         }
+                    } else { // It's a row revert
+                        const row = $(this).closest('tr');
+                        const changeId = row.data('changeId');
+                        self.removeChange(fileKey, changeId);
+                        row.removeClass('row-deleted').removeData('changeId');
+                        $(this).addClass('hidden');
+                        row.find('.delete-row-icon').removeClass('hidden');
                     }
                 });
+                
+                // Save Changes
+                container.find('.save-changes-btn').on('click', async () => {
+                    const result = await self.performApiCall('/api/update_data', { file_key: fileKey, changes: self.changes[fileKey] });
+                    if (result && result.status === 'success') {
+                        self.changes[fileKey] = [];
+                        self.updateSaveChangesButton(fileKey, false);
+                        self.showToast('success', 'Changes saved! Reloading page...');
+                        setTimeout(() => window.location.reload(), 1500);
+                    } else if (result) {
+                         self.showToast('error', result.message);
+                    }
+                });
+
+                // Delete Row
+                tableEl.on('click', '.delete-row-icon', function() {
+                    const row = $(this).closest('tr');
+                    const rowIndex = self.dataTables[fileKey].row(row).index();
+                    const changeId = self.recordChange(fileKey, { type: 'delete_row', row_index: rowIndex });
+                    row.addClass('row-deleted').data('changeId', changeId);
+                    $(this).addClass('hidden');
+                    row.find('.revert-icon').removeClass('hidden');
+                });
+
+                // Cell Editing
+                tableEl.on('dblclick', 'td.editable', function() {
+                    const cell = $(this);
+                    if (cell.hasClass('editing') || cell.closest('tr').hasClass('row-deleted')) return;
+
+                    const dt = self.dataTables[fileKey];
+                    const originalText = cell.text();
+                    const rowIndex = dt.row(cell.closest('tr')).index();
+                    const colIndex = dt.cell(this).index().column;
+                    const colName = $(dt.column(colIndex).header()).find('span').text().trim();
+
+                    cell.addClass('editing').html(`<input type="text" value="${originalText}">`);
+                    const input = cell.find('input');
+                    input.focus();
+
+                    const saveEdit = () => {
+                        const newText = input.val();
+                        cell.removeClass('editing');
+                        if (newText !== originalText) {
+                            const changeId = self.recordChange(fileKey, { type: 'edit', row_index: rowIndex, col_name: colName, new_value: newText, original_value: originalText });
+                            cell.addClass('cell-edited').data('changeId', changeId);
+                        }
+                        cell.text(newText);
+                    };
+                    input.on('blur', saveEdit).on('keypress', e => e.which === 13 && saveEdit());
+                });
+
+                // Add Row
                 container.find('.add-row-btn').on('click', () => {
                     const dt = self.dataTables[fileKey];
                     const newRowData = Array(dt.columns().count() - 1).fill('');
-                    newRowData.push('<i class="fas fa-trash-alt action-icon delete-row-icon text-gray-500"></i>');
-                    dt.row.add(newRowData).draw();
-                    self.recordChange(fileKey, { type: 'add_row' });
+                    newRowData.push('<i class="fas fa-trash-alt action-icon delete-row-icon text-gray-500"></i><i class="fas fa-undo action-icon revert-icon hidden"></i>');
+                    const addedRow = dt.row.add(newRowData).draw().node();
+                    $(addedRow).addClass('cell-edited'); // Mark new rows as a change
+                    self.recordChange(fileKey, { type: 'add_row', data: newRowData.slice(0,-1) });
                 });
+
+                // Add/Delete Column (simplified for this context, sends change to be processed on save)
                 container.find('.add-column-btn, .delete-col-icon').on('click', function() {
                     const isAdd = $(this).hasClass('add-column-btn');
                     const colName = isAdd ? null : $(this).data('col-name');
-                    const title = isAdd ? 'Add New Column' : 'Delete Column';
-                    const body = isAdd ? '<input type="text" id="new-col-name" class="w-full bg-gray-700 border border-gray-600 rounded-md p-2" placeholder="Enter column name">' : `Are you sure you want to delete the column "<strong>${colName}</strong>"?`;
+                    const titleKey = isAdd ? 'addColumnModalTitle' : 'deleteColumnModalTitle';
+                    const lang = self.currentLanguage;
+                    const body = isAdd ? '<input type="text" id="new-col-name" class="w-full bg-gray-700 border border-gray-600 rounded-md p-2" placeholder="Enter column name">' : `${self.translations[lang].deleteColumnBody} "<strong>${colName}</strong>"?`;
                     
                     self.showModal({
-                        title, body, primaryBtnText: isAdd ? 'Add' : 'Delete',
+                        titleKey, body, primaryBtnKey: isAdd ? 'addRow' : 'deleteColumnModalTitle',
                         onConfirm: () => {
                             const change = isAdd ? 
                                 { type: 'add_column', col_name: $('#new-col-name').val().trim() } :
@@ -457,42 +601,53 @@ $(document).ready(function() {
                                 return false;
                             }
                             self.recordChange(fileKey, change);
-                            self.showToast('success', `Column will be ${isAdd ? 'added' : 'deleted'} on save. Page will reload.`);
+                            const msg = isAdd ? self.translations[lang].colWillBeAdded : self.translations[lang].colWillBeDeleted;
+                            self.showToast('success', `Column '${change.col_name || colName}' ${msg}`);
                             return true;
                         }
                     });
                 });
-                tableEl.on('click', '.delete-row-icon', function() {
-                    const row = $(this).closest('tr');
-                    const dt = self.dataTables[fileKey];
-                    const rowIndex = dt.row(row).index();
-                    self.recordChange(fileKey, { type: 'delete_row', row_index: rowIndex });
-                    dt.row(row).remove().draw();
-                });
-                tableEl.on('dblclick', 'td.editable', function() {
-                    const cell = $(this);
-                    if (cell.hasClass('editing')) return;
-                    const dt = self.dataTables[fileKey];
-                    const originalText = cell.text();
-                    const rowIndex = dt.row(cell.closest('tr')).index();
-                    const colIndex = dt.cell(this).index().column;
-                    const colName = $(dt.column(colIndex).header()).find('span').text().trim();
-                    cell.addClass('editing').html(`<input type="text" value="${originalText}">`);
-                    const input = cell.find('input');
-                    input.focus();
-                    const saveEdit = () => {
-                        const newText = input.val();
-                        cell.removeClass('editing').text(newText);
-                        if (newText !== originalText) {
-                            self.recordChange(fileKey, { type: 'edit', row_index: rowIndex, col_name: colName, new_value: newText });
+
+                // Find/Replace
+                container.find('.find-replace-btn').on('click', () => {
+                    const headers = self.dataTables[fileKey].columns().header().toArray().map(h => $(h).find('span').text().trim());
+                    const colOptions = headers.map(h => `<option value="${h}">${h}</option>`).join('');
+                    const body = `
+                        <div class="space-y-4">
+                            <div><label class="block text-sm font-medium text-gray-400 mb-1">Find</label><input type="text" id="find-val" class="w-full bg-gray-700 border border-gray-600 rounded-md p-2"></div>
+                            <div><label class="block text-sm font-medium text-gray-400 mb-1">Replace with</label><input type="text" id="replace-val" class="w-full bg-gray-700 border border-gray-600 rounded-md p-2"></div>
+                             <div><label class="block text-sm font-medium text-gray-400 mb-1">In Column (optional)</label><select id="replace-col" class="w-full bg-gray-700 border border-gray-600 rounded-md p-2"><option value="">All Columns</option>${colOptions}</select></div>
+                        </div>`;
+                    self.showModal({
+                        titleKey: 'findReplaceModalTitle', body, primaryBtnKey: 'findReplace',
+                        onConfirm: async () => {
+                            const data = { type: 'find_replace', find: $('#find-val').val(), replace: $('#replace-val').val(), col_name: $('#replace-col').val() };
+                            if (!data.find) { self.showToast('error', 'Find value cannot be empty.'); return false; }
+                            const result = await self.performApiCall('/api/update_data', { file_key: fileKey, changes: [data] }, 'Replacement successful! Reloading...');
+                            if (result) setTimeout(() => window.location.reload(), 1000);
+                            return true;
                         }
-                    };
-                    input.on('blur', saveEdit).on('keypress', e => e.which === 13 && saveEdit());
+                    });
+                });
+
+                // Visualize
+                container.find('.visualize-btn').on('click', () => {
+                    const headers = self.dataTables[fileKey].columns().header().toArray().map(h => $(h).find('span').text().trim());
+                    const colOptions = headers.map(h => `<option value="${h}">${h}</option>`).join('');
+                     const body = `<div><label class="block text-sm font-medium text-gray-400 mb-1">Select column to visualize</label><select id="vis-col" class="w-full bg-gray-700 border border-gray-600 rounded-md p-2">${colOptions}</select></div>`;
+                    self.showModal({
+                        titleKey: 'visualizeModalTitle', body, primaryBtnKey: 'visualize',
+                        onConfirm: async () => {
+                            const colName = $('#vis-col').val();
+                            const result = await self.performApiCall('/api/get_column_summary', { file_key: fileKey, column_name: colName });
+                            if (result) { self.renderChart(result); $('#chart-modal').addClass('active'); }
+                            return true;
+                        }
+                    });
                 });
             });
         },
         
-        // --- Charting (unchanged) ---
         chartInstance: null,
         renderChart(summary) {
             if (this.chartInstance) this.chartInstance.destroy();
