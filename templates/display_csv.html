@@ -12,6 +12,9 @@
     <!-- DataTables RowGroup Extension -->
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/rowgroup/1.4.0/css/rowGroup.dataTables.min.css">
     <script type="text/javascript" src="https://cdn.datatables.net/rowgroup/1.4.0/js/dataTables.rowGroup.min.js"></script>
+    <!-- DataTables Scroller Extension -->
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/scroller/2.4.3/css/scroller.dataTables.min.css">
+    <script type="text/javascript" src="https://cdn.datatables.net/scroller/2.4.3/js/dataTables.scroller.min.js"></script>
     
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -19,41 +22,342 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #111827; /* gray-900 */ }
-        .dataTables_wrapper .dataTables_length, .dataTables_wrapper .dataTables_filter, .dataTables_wrapper .dataTables_info, .dataTables_wrapper .dataTables_paginate { color: #d1d5db; /* gray-300 */ }
-        .dataTables_wrapper .dataTables_length select { background-color: #374151; border-color: #4b5563; }
-        .dataTables_wrapper .dataTables_filter input { background-color: #374151; border-color: #4b5563; }
-        .dataTables_wrapper .dataTables_paginate .paginate_button { color: #d1d5db !important; }
-        .dataTables_wrapper .dataTables_paginate .paginate_button.disabled { color: #6b7280 !important; }
-        .dataTables_wrapper .dataTables_paginate .paginate_button.current { background: #1f2937 !important; border-color: #3b82f6 !important; color: #eff6ff !important; }
-        table.dataTable { border-color: #374151; }
-        table.dataTable thead th, table.dataTable thead td { border-bottom-color: #4b5563 !important; }
-        table.dataTable tbody td { color: #d1d5db; border-top-color: #374151 !important; transition: background-color 0.3s; }
-        table.dataTable tbody tr:hover { background-color: #1f2937 !important; }
-        td.editable { cursor: cell; }
-        td.editing input { width: 100%; padding: 6px; box-sizing: border-box; background-color: #1e40af; color: white; border: 1px solid #3b82f6; border-radius: 4px; }
-        .action-icon { cursor: pointer; transition: color 0.2s; }
-        .delete-row-icon:hover { color: #ef4444; }
-        .delete-col-icon:hover { color: #ef4444; }
-        .modal { display: none; }
-        .modal.active { display: flex; }
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); 
+            min-height: 100vh;
+        }
+        
+        /* Enhanced DataTables Night Mode Styling */
+        .dataTables_wrapper { 
+            background-color: #1e293b; 
+            border-radius: 12px; 
+            padding: 16px; 
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+        }
+        .dataTables_wrapper .dataTables_scrollHead {
+            background-color: #1e293b;
+        }
+        .dataTables_wrapper .dataTables_scrollHeadInner {
+            background-color: #1e293b;
+        }
+        .dataTables_wrapper .dataTables_scrollBody {
+            background-color: #1e293b;
+        }
+        .dataTables_wrapper .dataTables_scrollHead table {
+            margin-bottom: 0 !important;
+        }
+        .dataTables_wrapper .dataTables_length, 
+        .dataTables_wrapper .dataTables_filter, 
+        .dataTables_wrapper .dataTables_info, 
+        .dataTables_wrapper .dataTables_paginate { 
+            color: #e2e8f0; 
+            font-weight: 500;
+        }
+        .dataTables_wrapper .dataTables_length select { 
+            background-color: #334155; 
+            border: 1px solid #475569; 
+            color: #e2e8f0; 
+            border-radius: 6px; 
+            padding: 4px 8px;
+            transition: all 0.2s ease;
+        }
+        .dataTables_wrapper .dataTables_length select:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+            outline: none;
+        }
+        .dataTables_wrapper .dataTables_filter input { 
+            background-color: #334155; 
+            border: 1px solid #475569; 
+            color: #e2e8f0; 
+            border-radius: 6px; 
+            padding: 6px 12px;
+            transition: all 0.2s ease;
+        }
+        .dataTables_wrapper .dataTables_filter input:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+            outline: none;
+        }
+        .dataTables_wrapper .dataTables_paginate .paginate_button { 
+            color: #cbd5e1 !important; 
+            background: #334155 !important;
+            border: 1px solid #475569 !important;
+            border-radius: 6px !important;
+            margin: 0 2px !important;
+            transition: all 0.2s ease !important;
+        }
+        .dataTables_wrapper .dataTables_paginate .paginate_button:hover { 
+            background: #475569 !important; 
+            color: #f1f5f9 !important;
+            transform: translateY(-1px);
+        }
+        .dataTables_wrapper .dataTables_paginate .paginate_button.disabled { 
+            color: #64748b !important; 
+            background: #1e293b !important;
+            cursor: not-allowed !important;
+            opacity: 0.5 !important;
+        }
+        .dataTables_wrapper .dataTables_paginate .paginate_button.current { 
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8) !important; 
+            border-color: #3b82f6 !important; 
+            color: #ffffff !important; 
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3) !important;
+        }
+        
+        /* Enhanced Table Styling */
+        table.dataTable { 
+            background-color: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+        }
+        table.dataTable thead th, 
+        table.dataTable thead td,
+        table.dataTable thead th.header-cell { 
+            background: linear-gradient(135deg, #334155, #475569) !important;
+            border-bottom: 2px solid #3b82f6 !important; 
+            color: #f8fafc !important;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 0.5px;
+            padding: 12px 8px !important;
+            position: relative;
+        }
+        
+        /* DataTables Sorting States */
+        table.dataTable thead th.sorting,
+        table.dataTable thead th.sorting_asc,
+        table.dataTable thead th.sorting_desc,
+        table.dataTable thead th.sorting_asc_disabled,
+        table.dataTable thead th.sorting_desc_disabled,
+        table.dataTable thead th.header-cell.sorting,
+        table.dataTable thead th.header-cell.sorting_asc,
+        table.dataTable thead th.header-cell.sorting_desc {
+            background: linear-gradient(135deg, #334155, #475569) !important;
+            color: #f8fafc !important;
+        }
+        table.dataTable thead th.sorting:hover,
+        table.dataTable thead th.sorting_asc:hover,
+        table.dataTable thead th.sorting_desc:hover,
+        table.dataTable thead th.header-cell:hover {
+            background: linear-gradient(135deg, #475569, #64748b) !important;
+            color: #ffffff !important;
+        }
+        table.dataTable thead th.sorting:after,
+        table.dataTable thead th.sorting_asc:after,
+        table.dataTable thead th.sorting_desc:after {
+            color: #06b6d4 !important;
+            opacity: 0.8;
+        }
+        
+        /* Override any inspector or debugging classes */
+        table.dataTable thead th[class*="__web-inspector"],
+        table.dataTable thead th.__web-inspector-hide-shortcut__ {
+            background: linear-gradient(135deg, #334155, #475569) !important;
+            color: #f8fafc !important;
+        }
+        table.dataTable tbody td { 
+            background-color: #1e293b;
+            color: #e2e8f0; 
+            border-top: 1px solid #334155 !important; 
+            transition: all 0.3s ease;
+            padding: 10px 8px !important;
+        }
+        table.dataTable tbody tr { 
+            transition: all 0.3s ease;
+        }
+        table.dataTable tbody tr:nth-child(even) { 
+            background-color: #1a2332 !important; 
+        }
+        table.dataTable tbody tr:hover { 
+            background: linear-gradient(135deg, #1e3a8a, #1e40af) !important; 
+            transform: scale(1.01);
+            box-shadow: 0 4px 16px rgba(30, 64, 175, 0.3);
+        }
+        table.dataTable tbody tr:hover td {
+            color: #ffffff;
+        }
+        
+        /* Enhanced Editable Cells */
+        td.editable { 
+            cursor: cell; 
+            position: relative;
+            transition: all 0.2s ease;
+        }
+        td.editable:hover {
+            background-color: #334155 !important;
+            box-shadow: inset 0 0 0 1px #3b82f6;
+        }
+        td.editing input { 
+            width: 100%; 
+            padding: 8px 10px; 
+            box-sizing: border-box; 
+            background: linear-gradient(135deg, #1e40af, #1d4ed8); 
+            color: white; 
+            border: 2px solid #3b82f6; 
+            border-radius: 6px;
+            font-size: 14px;
+            transition: all 0.2s ease;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+        }
+        td.editing input:focus {
+            outline: none;
+            border-color: #06b6d4;
+            box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.3);
+        }
+        
+        /* Enhanced Action Icons */
+        .action-icon { 
+            cursor: pointer; 
+            transition: all 0.3s ease; 
+            font-size: 16px;
+            padding: 4px;
+            border-radius: 4px;
+        }
+        .delete-row-icon:hover { 
+            color: #ef4444; 
+            background-color: rgba(239, 68, 68, 0.1);
+            transform: scale(1.2);
+        }
+        .delete-col-icon:hover { 
+            color: #ef4444; 
+            background-color: rgba(239, 68, 68, 0.1);
+            transform: scale(1.1);
+        }
+        
+        /* Modal Enhancements */
+        .modal { 
+            display: none; 
+            backdrop-filter: blur(8px);
+        }
+        .modal.active { 
+            display: flex; 
+        }
 
-        /* Change Tracking Styles */
-        .cell-edited { background-color: #4a4a28 !important; }
-        .row-deleted { opacity: 0.5; background-color: #3a1a1a !important; }
-        .row-deleted td { text-decoration: line-through; }
-        .revert-icon { cursor: pointer; color: #6ee7b7; margin-left: 8px; }
-        .revert-icon:hover { color: #a7f3d0; }
+        /* Enhanced Change Tracking Styles */
+        .cell-edited { 
+            background: linear-gradient(135deg, #fbbf24, #f59e0b) !important; 
+            color: #1f2937 !important;
+            font-weight: 600;
+            position: relative;
+            animation: editPulse 2s ease-in-out;
+        }
+        .cell-edited:after {
+            content: '✏️';
+            position: absolute;
+            top: -2px;
+            right: -2px;
+            font-size: 10px;
+            background-color: #f59e0b;
+            border-radius: 50%;
+            width: 16px;
+            height: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .row-added { 
+            background: linear-gradient(135deg, #059669, #047857) !important; 
+            color: #ffffff !important;
+            animation: slideInFromLeft 0.5s ease-out;
+        }
+        .row-added td {
+            color: #ffffff !important;
+        }
+        .row-deleted { 
+            opacity: 0.6; 
+            background: linear-gradient(135deg, #dc2626, #b91c1c) !important; 
+            color: #fee2e2 !important;
+            animation: fadeOut 0.5s ease-out;
+        }
+        .row-deleted td { 
+            text-decoration: line-through; 
+            color: #fee2e2 !important;
+        }
+        .revert-icon { 
+            cursor: pointer; 
+            color: #10b981; 
+            margin-left: 8px; 
+            transition: all 0.3s ease;
+            font-size: 16px;
+            padding: 4px;
+            border-radius: 4px;
+        }
+        .revert-icon:hover { 
+            color: #34d399; 
+            background-color: rgba(16, 185, 129, 0.1);
+            transform: scale(1.2);
+        }
 
-
-        /* Grouping Styles */
-        tr.dtrg-group { background-color: #374151 !important; font-weight: bold; cursor: pointer; }
-        tr.dtrg-group:hover { background-color: #4b5563 !important; }
-        tr.dtrg-group td { border-bottom: 2px solid #111827; }
-        .expand-group-icon { transition: transform 0.2s ease-in-out; }
-        tr.dtrg-group.collapsed .expand-group-icon { transform: rotate(-90deg); }
-        tr.dtrg-group.group-deleted { opacity: 0.5; background-color: #3a1a1a !important; }
-        tr.dtrg-group.group-deleted strong { text-decoration: line-through; }
+        /* Enhanced Grouping Styles */
+        tr.dtrg-group { 
+            background: linear-gradient(135deg, #4338ca, #3730a3) !important; 
+            font-weight: bold; 
+            cursor: pointer; 
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(67, 56, 202, 0.3);
+        }
+        tr.dtrg-group:hover { 
+            background: linear-gradient(135deg, #5b21b6, #4c1d95) !important; 
+            transform: translateY(-1px);
+            box-shadow: 0 4px 16px rgba(91, 33, 182, 0.4);
+        }
+        tr.dtrg-group td { 
+            border-bottom: 2px solid #3b82f6; 
+            color: #ffffff !important;
+            padding: 12px 8px !important;
+        }
+        .expand-group-icon { 
+            transition: transform 0.3s ease-in-out; 
+            color: #06b6d4;
+            font-size: 18px;
+        }
+        tr.dtrg-group.collapsed .expand-group-icon { 
+            transform: rotate(-90deg); 
+        }
+        tr.dtrg-group.group-deleted { 
+            opacity: 0.6; 
+            background: linear-gradient(135deg, #7f1d1d, #991b1b) !important; 
+            animation: fadeOut 0.5s ease-out;
+        }
+        tr.dtrg-group.group-deleted strong { 
+            text-decoration: line-through; 
+        }
+        
+        /* Animation Keyframes */
+        @keyframes editPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+        }
+        @keyframes slideInFromLeft {
+            from { transform: translateX(-100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0.6; }
+        }
+        
+        /* Enhanced Scrollbar Styling */
+        .dataTables_scrollBody::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        .dataTables_scrollBody::-webkit-scrollbar-track {
+            background: #1e293b;
+            border-radius: 4px;
+        }
+        .dataTables_scrollBody::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            border-radius: 4px;
+        }
+        .dataTables_scrollBody::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(135deg, #2563eb, #1e40af);
+        }
     </style>
 </head>
 <body class="text-gray-200">
@@ -137,12 +441,12 @@
                         <thead>
                             <tr>
                                 {% for header in table_data.headers %}
-                                    <th class="text-white">
+                                    <th class="header-cell">
                                         <span class="mr-2">{{ header }}</span>
                                         <i class="fas fa-times-circle delete-col-icon text-gray-500 hover:text-red-500 cursor-pointer" data-col-name="{{ header }}"></i>
                                     </th>
                                 {% endfor %}
-                                <th class="text-white actions-header" data-lang-key="actionsHeader">Actions</th>
+                                <th class="header-cell actions-header" data-lang-key="actionsHeader">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -250,7 +554,14 @@ $(document).ready(function() {
                 
                 const groupingInfo = this.groupingState[fileKey];
                 let dtConfig = {
-                    responsive: true, scrollX: true,
+                    deferRender:    true,
+                    scrollY:        '60vh',
+                    scrollCollapse: true,
+                    scroller:       true,
+                    paging:         true,
+                    pageLength:     50,
+                    autoWidth:      false,
+                    responsive:     false,
                     columnDefs: [{ orderable: false, targets: -1 }],
                     rowGroup: groupingInfo ? { 
                         dataSrc: groupingInfo.colIndex,
@@ -265,6 +576,33 @@ $(document).ready(function() {
                         }
                      } : false,
                      order: groupingInfo ? [[groupingInfo.colIndex, 'asc']] : [],
+                     rowCallback: (row, data, index) => {
+                        const fileChanges = this.changes[fileKey] || [];
+                        $(row).removeClass('row-deleted cell-edited row-added');
+                        $(row).find('.revert-icon').addClass('hidden');
+                        $(row).find('.delete-row-icon').removeClass('hidden');
+
+                        // Check for row-level changes (add/delete)
+                        const rowChange = fileChanges.find(c => c.row_index === index);
+                        if (rowChange) {
+                            if (rowChange.type === 'delete_row') {
+                                $(row).addClass('row-deleted').data('changeId', rowChange.id);
+                                $(row).find('.delete-row-icon').addClass('hidden');
+                                $(row).find('.revert-icon').removeClass('hidden');
+                            } else if (rowChange.type === 'add_row') {
+                                $(row).addClass('row-added');
+                            }
+                        }
+                        
+                        // Check for cell-level changes
+                        const cells = $(row).find('td');
+                        fileChanges.forEach(change => {
+                            if (change.type === 'edit' && change.row_index === index) {
+                                const colIndex = this.dataTables[fileKey].column(change.col_name + ':name').index();
+                                $(cells[colIndex]).addClass('cell-edited').data('changeId', change.id);
+                            }
+                        });
+                     },
                      drawCallback: () => {
                          if(groupingInfo) $(`#${fileKey}_table tbody tr`).not('.dtrg-group').hide();
                      }
@@ -500,29 +838,26 @@ $(document).ready(function() {
                 });
 
                 // Revert Group or Row Deletion
-                tableEl.on('click', '.revert-icon', function(e) {
-                    e.stopPropagation();
-                    const groupRow = $(this).closest('tr.dtrg-group');
-                    if (groupRow.length > 0) { // It's a group revert
-                        const changeId = groupRow.data('changeId');
-                        self.removeChange(fileKey, changeId);
-                        
-                        groupRow.removeClass('group-deleted').removeData('changeId');
-                        groupRow.find('.delete-group-icon').removeClass('hidden');
-                        groupRow.find('.revert-icon').addClass('hidden');
-                        groupRow.nextUntil('tr.dtrg-group').removeClass('row-deleted');
-                        if (!groupRow.hasClass('collapsed')) {
-                            groupRow.nextUntil('tr.dtrg-group').show();
-                        }
-                    } else { // It's a row revert
-                        const row = $(this).closest('tr');
-                        const changeId = row.data('changeId');
-                        self.removeChange(fileKey, changeId);
-                        row.removeClass('row-deleted').removeData('changeId');
-                        $(this).addClass('hidden');
-                        row.find('.delete-row-icon').removeClass('hidden');
-                    }
-                });
+tableEl.on('click', '.revert-icon', function(e) {
+    e.stopPropagation();
+    const dt = self.dataTables[fileKey];
+    const groupRow = $(this).closest('tr.dtrg-group');
+    if (groupRow.length > 0) { // It's a group revert
+        const changeId = groupRow.data('changeId');
+        self.removeChange(fileKey, changeId);
+        groupRow.removeClass('group-deleted'); // Redraw is needed here to restore child rows
+        dt.draw();
+    } else { // It's a row revert
+        const row = $(this).closest('tr');
+        const changeId = row.data('changeId');
+        self.removeChange(fileKey, changeId);
+
+        // Directly manipulate the DOM to prevent table jumping
+        row.removeClass('row-deleted').removeData('changeId');
+        $(this).addClass('hidden');
+        row.find('.delete-row-icon').removeClass('hidden');
+    }
+});
                 
                 // Save Changes
                 container.find('.save-changes-btn').on('click', async () => {
@@ -537,15 +872,18 @@ $(document).ready(function() {
                     }
                 });
 
-                // Delete Row
-                tableEl.on('click', '.delete-row-icon', function() {
-                    const row = $(this).closest('tr');
-                    const rowIndex = self.dataTables[fileKey].row(row).index();
-                    const changeId = self.recordChange(fileKey, { type: 'delete_row', row_index: rowIndex });
-                    row.addClass('row-deleted').data('changeId', changeId);
-                    $(this).addClass('hidden');
-                    row.find('.revert-icon').removeClass('hidden');
-                });
+               // Delete Row
+tableEl.on('click', '.delete-row-icon', function() {
+    const row = $(this).closest('tr');
+    const dt = self.dataTables[fileKey];
+    const rowIndex = dt.row(row).index();
+    const changeId = self.recordChange(fileKey, { type: 'delete_row', row_index: rowIndex });
+    
+    // Directly manipulate the DOM to prevent table jumping
+    row.addClass('row-deleted').data('changeId', changeId);
+    $(this).addClass('hidden');
+    row.find('.revert-icon').removeClass('hidden');
+});
 
                 // Cell Editing
                 tableEl.on('dblclick', 'td.editable', function() {
@@ -553,7 +891,7 @@ $(document).ready(function() {
                     if (cell.hasClass('editing') || cell.closest('tr').hasClass('row-deleted')) return;
 
                     const dt = self.dataTables[fileKey];
-                    const originalText = cell.text();
+                    const originalText = dt.cell(this).data();
                     const rowIndex = dt.row(cell.closest('tr')).index();
                     const colIndex = dt.cell(this).index().column;
                     const colName = $(dt.column(colIndex).header()).find('span').text().trim();
@@ -565,11 +903,11 @@ $(document).ready(function() {
                     const saveEdit = () => {
                         const newText = input.val();
                         cell.removeClass('editing');
+                        dt.cell(cell).data(newText); // Update DataTables internal data
                         if (newText !== originalText) {
-                            const changeId = self.recordChange(fileKey, { type: 'edit', row_index: rowIndex, col_name: colName, new_value: newText, original_value: originalText });
-                            cell.addClass('cell-edited').data('changeId', changeId);
+                            self.recordChange(fileKey, { type: 'edit', row_index: rowIndex, col_name: colName, new_value: newText, original_value: originalText });
+                            dt.cell(cell).draw(); // Redraw cell to apply styling
                         }
-                        cell.text(newText);
                     };
                     input.on('blur', saveEdit).on('keypress', e => e.which === 13 && saveEdit());
                 });
@@ -578,10 +916,11 @@ $(document).ready(function() {
                 container.find('.add-row-btn').on('click', () => {
                     const dt = self.dataTables[fileKey];
                     const newRowData = Array(dt.columns().count() - 1).fill('');
-                    newRowData.push('<i class="fas fa-trash-alt action-icon delete-row-icon text-gray-500"></i><i class="fas fa-undo action-icon revert-icon hidden"></i>');
+                    newRowData.push(''); // Placeholder for actions column
                     const addedRow = dt.row.add(newRowData).draw().node();
-                    $(addedRow).addClass('cell-edited'); // Mark new rows as a change
-                    self.recordChange(fileKey, { type: 'add_row', data: newRowData.slice(0,-1) });
+                    const rowIndex = dt.row(addedRow).index();
+                    self.recordChange(fileKey, { type: 'add_row', row_index: rowIndex, data: newRowData.slice(0,-1) });
+                    dt.row(addedRow).draw();
                 });
 
                 // Add/Delete Column (simplified for this context, sends change to be processed on save)
@@ -679,4 +1018,4 @@ $(document).ready(function() {
 </script>
 
 </body>
-</ht
+</html>
