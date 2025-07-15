@@ -22,6 +22,13 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        /* Reset any potential conflicts */
+        .dataTables_wrapper .dataTables_processing {
+            background: rgba(30, 41, 59, 0.9) !important;
+            color: #e2e8f0 !important;
+            border: 1px solid #334155 !important;
+        }
+        
         body { 
             font-family: 'Inter', sans-serif; 
             background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); 
@@ -46,6 +53,13 @@
         }
         .dataTables_wrapper .dataTables_scrollHead table {
             margin-bottom: 0 !important;
+        }
+        /* Override DataTables default styles that might conflict */
+        .dataTables_wrapper .dataTables_scrollHeadInner table {
+            background-color: #1e293b !important;
+        }
+        .dataTables_wrapper .dataTables_scrollBody table {
+            background-color: #1e293b !important;
         }
         .dataTables_wrapper .dataTables_length, 
         .dataTables_wrapper .dataTables_filter, 
@@ -108,11 +122,12 @@
         
         /* Enhanced Table Styling */
         table.dataTable { 
-            background-color: #1e293b;
+            background-color: #1e293b !important;
             border: 1px solid #334155;
             border-radius: 8px;
             overflow: hidden;
             box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+            width: 100% !important;
         }
         table.dataTable thead th, 
         table.dataTable thead td,
@@ -126,6 +141,7 @@
             letter-spacing: 0.5px;
             padding: 12px 8px !important;
             position: relative;
+            border-top: none !important;
         }
         
         /* DataTables Sorting States */
@@ -161,25 +177,27 @@
             color: #f8fafc !important;
         }
         table.dataTable tbody td { 
-            background-color: #1e293b;
-            color: #e2e8f0; 
+            background-color: #1e293b !important;
+            color: #e2e8f0 !important; 
             border-top: 1px solid #334155 !important; 
             transition: all 0.3s ease;
             padding: 10px 8px !important;
         }
         table.dataTable tbody tr { 
             transition: all 0.3s ease;
+            background-color: #1e293b !important;
         }
         table.dataTable tbody tr:nth-child(even) { 
             background-color: #1a2332 !important; 
         }
         table.dataTable tbody tr:hover { 
             background: linear-gradient(135deg, #1e3a8a, #1e40af) !important; 
-            transform: scale(1.01);
+            transform: scale(1.005);
             box-shadow: 0 4px 16px rgba(30, 64, 175, 0.3);
         }
         table.dataTable tbody tr:hover td {
-            color: #ffffff;
+            color: #ffffff !important;
+            background-color: transparent !important;
         }
         
         /* Enhanced Editable Cells */
@@ -318,6 +336,9 @@
         }
         tr.dtrg-group.collapsed .expand-group-icon { 
             transform: rotate(-90deg); 
+        }
+        tr.dtrg-group:not(.collapsed) .expand-group-icon {
+            transform: rotate(0deg);
         }
         tr.dtrg-group.group-deleted { 
             opacity: 0.6; 
@@ -502,6 +523,9 @@
 
 <script>
 $(document).ready(function() {
+    console.log('jQuery loaded:', typeof $ !== 'undefined');
+    console.log('DataTables loaded:', typeof $.fn.DataTable !== 'undefined');
+    
     // --- App State & Config ---
     const App = {
         changes: {},
@@ -536,12 +560,18 @@ $(document).ready(function() {
         },
         
         init() {
-            this.initDataTables();
-            this.bindGlobalActions();
-            this.bindTableActions();
-            this.bindModalControls();
-            this.updateGlobalButtonsState();
-            this.initLanguage();
+            console.log('Initializing CSV Manager App...');
+            try {
+                this.initDataTables();
+                this.bindGlobalActions();
+                this.bindTableActions();
+                this.bindModalControls();
+                this.updateGlobalButtonsState();
+                this.initLanguage();
+                console.log('CSV Manager App initialized successfully');
+            } catch (error) {
+                console.error('Error initializing CSV Manager App:', error);
+            }
         },
 
         // --- DataTable Initialization ---
@@ -549,65 +579,95 @@ $(document).ready(function() {
             const tables = fileKeyToInit ? $(`#${fileKeyToInit}_table`) : $('table.display');
             
             tables.each((_, tableEl) => {
-                const fileKey = $(tableEl).closest('[data-file-key]').data('file-key');
-                if (this.dataTables[fileKey]) this.dataTables[fileKey].destroy();
-                
-                const groupingInfo = this.groupingState[fileKey];
-                let dtConfig = {
-                    deferRender:    true,
-                    scrollY:        '60vh',
-                    scrollCollapse: true,
-                    scroller:       true,
-                    paging:         true,
-                    pageLength:     50,
-                    autoWidth:      false,
-                    responsive:     false,
-                    columnDefs: [{ orderable: false, targets: -1 }],
-                    rowGroup: groupingInfo ? { 
-                        dataSrc: groupingInfo.colIndex,
-                        startRender: (rows, group) => {
-                             return $('<tr class="dtrg-group group-header collapsed">')
-                                .append(`<td colspan="999">` +
-                                    `<i class="fas fa-chevron-down expand-group-icon mr-2"></i>` +
-                                    `<strong>${group}</strong> (${rows.count()} rows)` +
-                                    `<i class="fas fa-trash-alt delete-group-icon text-gray-500 hover:text-red-500 ml-4 cursor-pointer" data-group-value="${group}"></i>` +
-                                    `<i class="fas fa-undo action-icon revert-icon hidden ml-2" title="Revert deletion"></i>` +
-                                `</td>`);
-                        }
-                     } : false,
-                     order: groupingInfo ? [[groupingInfo.colIndex, 'asc']] : [],
-                     rowCallback: (row, data, index) => {
-                        const fileChanges = this.changes[fileKey] || [];
-                        $(row).removeClass('row-deleted cell-edited row-added');
-                        $(row).find('.revert-icon').addClass('hidden');
-                        $(row).find('.delete-row-icon').removeClass('hidden');
+                try {
+                    const fileKey = $(tableEl).closest('[data-file-key]').data('file-key');
+                    if (this.dataTables[fileKey]) {
+                        this.dataTables[fileKey].destroy();
+                        delete this.dataTables[fileKey];
+                    }
+                    
+                    const groupingInfo = this.groupingState[fileKey];
+                    let dtConfig = {
+                        deferRender:    true,
+                        scrollY:        '60vh',
+                        scrollCollapse: true,
+                        scroller:       true,
+                        paging:         true,
+                        pageLength:     50,
+                        autoWidth:      false,
+                        responsive:     false,
+                        processing:     true,
+                        stateSave:      false,
+                        columnDefs: [{ orderable: false, targets: -1 }],
+                        rowGroup: groupingInfo ? { 
+                            dataSrc: groupingInfo.colIndex,
+                            startRender: (rows, group) => {
+                                 return $('<tr class="dtrg-group group-header">')
+                                    .append(`<td colspan="999">` +
+                                        `<i class="fas fa-chevron-down expand-group-icon mr-2"></i>` +
+                                        `<strong>${group}</strong> (${rows.count()} rows)` +
+                                        `<i class="fas fa-trash-alt delete-group-icon text-gray-500 hover:text-red-500 ml-4 cursor-pointer" data-group-value="${group}"></i>` +
+                                        `<i class="fas fa-undo action-icon revert-icon hidden ml-2" title="Revert deletion"></i>` +
+                                    `</td>`);
+                            }
+                         } : false,
+                         order: groupingInfo ? [[groupingInfo.colIndex, 'asc']] : [],
+                         rowCallback: (row, data, index) => {
+                            const fileChanges = this.changes[fileKey] || [];
+                            $(row).removeClass('row-deleted cell-edited row-added');
+                            $(row).find('.revert-icon').addClass('hidden');
+                            $(row).find('.delete-row-icon').removeClass('hidden');
 
-                        // Check for row-level changes (add/delete)
-                        const rowChange = fileChanges.find(c => c.row_index === index);
-                        if (rowChange) {
-                            if (rowChange.type === 'delete_row') {
-                                $(row).addClass('row-deleted').data('changeId', rowChange.id);
-                                $(row).find('.delete-row-icon').addClass('hidden');
-                                $(row).find('.revert-icon').removeClass('hidden');
-                            } else if (rowChange.type === 'add_row') {
-                                $(row).addClass('row-added');
+                            // Check for row-level changes (add/delete)
+                            const rowChange = fileChanges.find(c => c.row_index === index);
+                            if (rowChange) {
+                                if (rowChange.type === 'delete_row') {
+                                    $(row).addClass('row-deleted').data('changeId', rowChange.id);
+                                    $(row).find('.delete-row-icon').addClass('hidden');
+                                    $(row).find('.revert-icon').removeClass('hidden');
+                                } else if (rowChange.type === 'add_row') {
+                                    $(row).addClass('row-added');
+                                }
                             }
-                        }
-                        
-                        // Check for cell-level changes
-                        const cells = $(row).find('td');
-                        fileChanges.forEach(change => {
-                            if (change.type === 'edit' && change.row_index === index) {
-                                const colIndex = this.dataTables[fileKey].column(change.col_name + ':name').index();
-                                $(cells[colIndex]).addClass('cell-edited').data('changeId', change.id);
-                            }
-                        });
-                     },
-                     drawCallback: () => {
-                         if(groupingInfo) $(`#${fileKey}_table tbody tr`).not('.dtrg-group').hide();
-                     }
-                };
-                this.dataTables[fileKey] = $(tableEl).DataTable(dtConfig);
+                            
+                            // Check for cell-level changes
+                            const cells = $(row).find('td');
+                            fileChanges.forEach(change => {
+                                if (change.type === 'edit' && change.row_index === index) {
+                                    const colIndex = this.dataTables[fileKey].column(change.col_name + ':name').index();
+                                    if (colIndex >= 0) {
+                                        $(cells[colIndex]).addClass('cell-edited').data('changeId', change.id);
+                                    }
+                                }
+                            });
+                         },
+                         drawCallback: () => {
+                             // Show all rows initially when grouped, let the group headers control visibility
+                             if(groupingInfo) {
+                                 $(`#${fileKey}_table tbody tr.dtrg-group`).each(function() {
+                                     const groupRow = $(this);
+                                     const childRows = groupRow.nextUntil('tr.dtrg-group');
+                                     
+                                     // If group is collapsed, hide child rows
+                                     if (groupRow.hasClass('collapsed')) {
+                                         childRows.hide();
+                                     } else {
+                                         childRows.show();
+                                     }
+                                 });
+                             }
+                         },
+                         initComplete: function(settings, json) {
+                             console.log('DataTable initialized for:', fileKey);
+                         }
+                    };
+                    
+                    this.dataTables[fileKey] = $(tableEl).DataTable(dtConfig);
+                    console.log('DataTable created for:', fileKey);
+                } catch (error) {
+                    console.error('Error initializing DataTable:', error);
+                    console.error('Table element:', tableEl);
+                }
             });
         },
         
@@ -814,10 +874,26 @@ $(document).ready(function() {
                 });
                 
                 // Delegated click for expanding/collapsing a group
-                tableEl.on('click', 'tr.dtrg-group', function() {
+                tableEl.on('click', 'tr.dtrg-group', function(e) {
+                    // Don't trigger if clicking on delete or revert icons
+                    if ($(e.target).hasClass('delete-group-icon') || $(e.target).hasClass('revert-icon')) return;
                     if ($(this).hasClass('group-deleted')) return;
-                    $(this).toggleClass('collapsed');
-                    $(this).nextUntil('tr.dtrg-group').toggle();
+                    
+                    const groupRow = $(this);
+                    const isCollapsed = groupRow.hasClass('collapsed');
+                    const childRows = groupRow.nextUntil('tr.dtrg-group');
+                    
+                    if (isCollapsed) {
+                        // Expand: show rows and update icon
+                        groupRow.removeClass('collapsed');
+                        childRows.show();
+                        groupRow.find('.expand-group-icon').removeClass('fa-chevron-right').addClass('fa-chevron-down');
+                    } else {
+                        // Collapse: hide rows and update icon
+                        groupRow.addClass('collapsed');
+                        childRows.hide();
+                        groupRow.find('.expand-group-icon').removeClass('fa-chevron-down').addClass('fa-chevron-right');
+                    }
                 });
 
                 // Delegated click for deleting a group
@@ -891,36 +967,97 @@ tableEl.on('click', '.delete-row-icon', function() {
                     if (cell.hasClass('editing') || cell.closest('tr').hasClass('row-deleted')) return;
 
                     const dt = self.dataTables[fileKey];
-                    const originalText = dt.cell(this).data();
+                    const originalText = dt.cell(this).data() || '';
                     const rowIndex = dt.row(cell.closest('tr')).index();
                     const colIndex = dt.cell(this).index().column;
                     const colName = $(dt.column(colIndex).header()).find('span').text().trim();
 
-                    cell.addClass('editing').html(`<input type="text" value="${originalText}">`);
+                    cell.addClass('editing').html(`<input type="text" value="${originalText.toString()}">`);
                     const input = cell.find('input');
-                    input.focus();
+                    input.focus().select(); // Select all text for easy editing
 
                     const saveEdit = () => {
                         const newText = input.val();
                         cell.removeClass('editing');
                         dt.cell(cell).data(newText); // Update DataTables internal data
+                        
                         if (newText !== originalText) {
-                            self.recordChange(fileKey, { type: 'edit', row_index: rowIndex, col_name: colName, new_value: newText, original_value: originalText });
+                            self.recordChange(fileKey, { 
+                                type: 'edit', 
+                                row_index: rowIndex, 
+                                col_name: colName, 
+                                new_value: newText, 
+                                original_value: originalText 
+                            });
                             dt.cell(cell).draw(); // Redraw cell to apply styling
                         }
                     };
-                    input.on('blur', saveEdit).on('keypress', e => e.which === 13 && saveEdit());
+                    
+                    input.on('blur', saveEdit)
+                         .on('keypress', e => {
+                             if (e.which === 13) { // Enter key
+                                 saveEdit();
+                                 // Move to next editable cell
+                                 const nextCell = cell.next('td.editable');
+                                 if (nextCell.length > 0) {
+                                     setTimeout(() => nextCell.trigger('dblclick'), 50);
+                                 }
+                             }
+                         })
+                         .on('keydown', e => {
+                             if (e.which === 27) { // Escape key
+                                 input.val(originalText);
+                                 input.blur();
+                             }
+                         });
                 });
 
                 // Add Row
                 container.find('.add-row-btn').on('click', () => {
                     const dt = self.dataTables[fileKey];
-                    const newRowData = Array(dt.columns().count() - 1).fill('');
+                    const colCount = dt.columns().count() - 1; // Exclude actions column
+                    const newRowData = Array(colCount).fill('New Value');
                     newRowData.push(''); // Placeholder for actions column
-                    const addedRow = dt.row.add(newRowData).draw().node();
-                    const rowIndex = dt.row(addedRow).index();
-                    self.recordChange(fileKey, { type: 'add_row', row_index: rowIndex, data: newRowData.slice(0,-1) });
-                    dt.row(addedRow).draw();
+                    
+                    // Add row at the beginning (index 0)
+                    const addedRow = dt.row.add(newRowData);
+                    
+                    // Move the new row to the top
+                    const newRowNode = addedRow.node();
+                    const tbody = dt.table().body();
+                    
+                    // Insert as first row in tbody
+                    if (tbody.firstChild) {
+                        tbody.insertBefore(newRowNode, tbody.firstChild);
+                    } else {
+                        tbody.appendChild(newRowNode);
+                    }
+                    
+                    // Redraw table to update indexes and apply styling
+                    dt.draw(false); // false = don't reset paging
+                    
+                    // Get the updated row index after redraw
+                    const rowIndex = dt.row(newRowNode).index();
+                    self.recordChange(fileKey, { 
+                        type: 'add_row', 
+                        row_index: rowIndex, 
+                        data: newRowData.slice(0, -1) 
+                    });
+                    
+                    // Apply row-added styling immediately
+                    $(newRowNode).addClass('row-added');
+                    
+                    // Make the first cell immediately editable
+                    setTimeout(() => {
+                        const firstCell = $(newRowNode).find('td.editable').first();
+                        if (firstCell.length > 0) {
+                            firstCell.trigger('dblclick');
+                        }
+                    }, 100);
+                    
+                    // Scroll to top to show the new row
+                    const scrollContainer = dt.settings()[0].nScrollBody || dt.table().container();
+                    $(scrollContainer).animate({ scrollTop: 0 }, 300);
                 });
 
                 // Add/Delete Column (simplified for this context, sends change to be processed on save)
