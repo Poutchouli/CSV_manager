@@ -5,9 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cleaned CSV Data</title>
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/2.0.8/css/dataTables.dataTables.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
         body { font-family: Arial, sans-serif; margin: 20px; }
-        .container { max-width: 1200px; margin: auto; padding: 20px; border: 1px solid #ccc; border-radius: 8px; }
+        .container { max-width: 1400px; margin: auto; padding: 20px; border: 1px solid #ccc; border-radius: 8px; }
         h1, h2 { text-align: center; color: #333; }
         .data-section { margin-top: 30px; border: 1px solid #eee; padding: 15px; border-radius: 5px; }
         table.dataTable { width: 100% !important; margin-top: 15px; border-collapse: collapse; }
@@ -31,6 +32,117 @@
             border-radius: 5px;
             text-align: center;
         }
+        /* Action buttons above the table */
+        .table-actions { margin-bottom: 15px; display: flex; justify-content: space-between; gap: 10px; }
+        .table-actions button {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: background-color 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .table-actions .add-btn { background-color: #28a745; color: white; }
+        .table-actions .add-btn:hover { background-color: #218838; }
+        .table-actions .save-btn { background-color: #007bff; color: white; }
+        .table-actions .save-btn:hover { background-color: #0056b3; }
+        .table-actions .warn-btn { background-color: #ffc107; color: #333; }
+        .table-actions .warn-btn:hover { background-color: #e0a800; }
+
+
+        /* Styles for editable cells */
+        td.editable { cursor: pointer; }
+        td.editing input {
+            width: 100%;
+            padding: 5px;
+            box-sizing: border-box;
+            border: 1px solid #007bff;
+            border-radius: 3px;
+        }
+        /* Styles for action icons in cells/headers */
+        .action-icon {
+            cursor: pointer;
+            color: #dc3545; /* Red for delete */
+            margin-left: 5px;
+            font-size: 0.9em;
+        }
+        .action-icon:hover { color: #bd2130; }
+        .col-header-actions {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%; /* Ensure content takes full width of th */
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 600px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            position: relative;
+        }
+        .close-button {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .close-button:hover,
+        .close-button:focus {
+            color: black;
+            text-decoration: none;
+        }
+        .modal-body select {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 15px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+        }
+        .modal-body button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+        }
+        #count-results-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        #count-results-table th, #count-results-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        #count-results-table th {
+            background-color: #f2f2f2;
+        }
     </style>
 </head>
 <body>
@@ -52,20 +164,39 @@
             {% for file_key, table_data in tables.items() %}
                 <div class="data-section">
                     <h2>{{ original_names[file_key + '_name'] }}</h2>
+                    <div class="table-actions">
+                        <div>
+                            <button class="add-btn add-row-btn" data-file-key="{{ file_key }}"><i class="fas fa-plus"></i> Add Row</button>
+                            <button class="add-btn add-column-btn" data-file-key="{{ file_key }}"><i class="fas fa-plus"></i> Add Column</button>
+                            <button class="warn-btn count-mode-btn" data-file-key="{{ file_key }}"><i class="fas fa-calculator"></i> Count Mode</button>
+                        </div>
+                        <div>
+                             <button class="save-btn save-changes-btn" data-file-key="{{ file_key }}"><i class="fas fa-save"></i> Save Changes</button>
+                             <button class="warn-btn download-btn" data-file-key="{{ file_key }}" data-original-file-name="{{ original_names[file_key + '_name'] }}"><i class="fas fa-download"></i> Download CSV</button>
+                        </div>
+                    </div>
                     <table id="{{ file_key }}_table" class="display">
                         <thead>
                             <tr>
                                 {% for header in table_data.headers %}
-                                    <th>{{ header }}</th>
+                                    <th>
+                                        <div class="col-header-actions">
+                                            <span>{{ header }}</span>
+                                            <i class="fas fa-times-circle action-icon delete-column-icon" data-col-name="{{ header }}"></i>
+                                        </div>
+                                    </th>
                                 {% endfor %}
-                            </tr>
+                                <th>Actions</th> </tr>
                         </thead>
                         <tbody>
                             {% for row in table_data.data %}
-                                <tr>
+                                <tr data-row-index="{{ loop.index0 }}">
                                     {% for cell in row %}
-                                        <td>{{ cell }}</td>
+                                        <td class="editable">{{ cell }}</td>
                                     {% endfor %}
+                                    <td>
+                                        <i class="fas fa-trash-alt action-icon delete-row-icon"></i>
+                                    </td>
                                 </tr>
                             {% endfor %}
                         </tbody>
@@ -77,22 +208,78 @@
         {% endif %}
     </div>
 
+    <div id="countModeModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <h2>Count Occurrences per Field</h2>
+            <div class="modal-body">
+                <p>Select a column to view the count of unique values.</p>
+                <select id="countColumnSelect">
+                    </select>
+                <button id="getColumnCountsBtn">Get Counts</button>
+                <div id="countResults">
+                    <table id="count-results-table">
+                        <thead>
+                            <tr>
+                                <th>Value</th>
+                                <th>Count</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            </tbody>
+                    </table>
+                    <p id="countError" style="color: red; display: none;"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
     <script type="text/javascript" src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script type="text/javascript" src="https://cdn.datatables.net/2.0.8/js/dataTables.min.js"></script>
     <script>
         $(document).ready(function() {
-            {% for file_key, table_data in tables.items() %}
-                var tableId = '#{{ file_key }}_table';
+            const sessionId = {{ session_id|tojson }};
+            const changesToSave = {}; // Stores changes per file_key: {file_key: [{type: 'edit', ...}, {type: 'add_row', ...}]}
+
+            function initializeDataTable(tableId, fileKey) {
+                // Destroy existing DataTable instance if it exists
+                if ($.fn.DataTable.isDataTable(tableId)) {
+                    $(tableId).DataTable().destroy();
+                    // Clear previously added column filter row
+                    $(tableId + ' thead tr:eq(1)').remove(); // Remove the filter row if it exists
+                }
+
+                // Initialize DataTables
                 var dataTable = $(tableId).DataTable({
                     "paging": true,
                     "searching": true,
                     "ordering": true,
-                    "info": true
+                    "info": true,
+                    "lengthMenu": [ [10, 25, 50, 100, -1], [10, 25, 50, 100, "All"] ],
+                    "autoWidth": false, // Prevent DataTables from calculating fixed widths
+                    "scrollX": true,    // Enable horizontal scrolling for wide tables
+                    "scrollCollapse": true, // Adjust table height to fit visible rows
+                    "fixedColumns": { // Keep first/last columns visible if scrolling
+                        leftColumns: 0,
+                        rightColumns: 1 // For the Actions column
+                    },
+                    "columnDefs": [
+                        { "orderable": false, "targets": -1 }, // Disable ordering on the Actions column
+                        { "searchable": false, "targets": -1 } // Disable searching on the Actions column
+                    ]
                 });
 
+                // --- Individual Column Filtering ---
                 $(tableId + ' thead tr').clone(true).appendTo(tableId + ' thead');
                 $(tableId + ' thead tr:eq(1) th').each(function (i) {
-                    var title = $(this).text();
+                    // Skip the last column (Actions column) for filtering input
+                    if (i === dataTable.columns().count() - 1) {
+                        $(this).html(''); // Empty the cell for the Actions column filter
+                        return;
+                    }
+                    var titleSpan = $(this).find('span');
+                    var title = titleSpan.length ? titleSpan.text() : $(this).text().trim(); // Get the original column title, accounting for delete icon
                     $(this).html('<input type="text" placeholder="Filter ' + title + '" style="width:100%;" />');
 
                     $('input', this).on('keyup change', function () {
@@ -104,8 +291,318 @@
                         }
                     });
                 });
+
+                // --- In-place Cell Editing ---
+                $(tableId + ' tbody').off('dblclick', 'td.editable').on('dblclick', 'td.editable', function() {
+                    const $cell = $(this);
+                    if ($cell.hasClass('editing')) return; // Prevent multiple edits
+                    
+                    const originalText = $cell.text();
+                    // DataTables.cell(this).index() gives {row: data_idx, column: col_idx}
+                    const columnIndex = dataTable.cell(this).index().column;
+                    const columnHeader = dataTable.column(columnIndex).header();
+                    // Get column name from the <span> element or fallback to text if no span (for initial load)
+                    const colName = $(columnHeader).find('span').text().trim() || $(columnHeader).contents().filter(function() {
+                        return this.nodeType === 3; // Node.TEXT_NODE
+                    }).text().trim(); 
+
+                    const rowIndex = dataTable.row($cell.closest('tr')).index(); // DataTables' internal row index
+                    
+                    $cell.addClass('editing');
+                    $cell.html(`<input type="text" value="${escapeHtml(originalText)}">`);
+                    const $input = $cell.find('input');
+                    $input.focus();
+
+                    function saveEdit() {
+                        const newText = $input.val();
+                        if (newText !== originalText) {
+                            // Record change
+                            const change = {
+                                type: 'edit',
+                                row_index: rowIndex, // Use DataTables internal index
+                                col_name: colName,
+                                original_value: originalText,
+                                new_value: newText
+                            };
+                            changesToSave[fileKey] = changesToSave[fileKey] || [];
+                            changesToSave[fileKey].push(change);
+                            console.log(`Recorded edit: ${JSON.stringify(change)}`);
+                        }
+                        $cell.removeClass('editing');
+                        $cell.text(newText);
+                    }
+
+                    $input.on('blur', saveEdit); // Save on blur
+                    $input.on('keypress', function(e) {
+                        if (e.which === 13) { // Enter key
+                            saveEdit();
+                            $input.off('blur'); // Prevent blur from triggering again
+                        }
+                    });
+                });
+
+                // --- Row Deletion ---
+                $(tableId).on('click', '.delete-row-icon', function() {
+                    if (!confirm("Are you sure you want to delete this row?")) {
+                        return;
+                    }
+                    const $tr = $(this).closest('tr');
+                    const rowIndex = dataTable.row($tr).index(); // Get DataTables' internal index
+                    
+                    const change = {
+                        type: 'delete_row',
+                        row_indices: [rowIndex] // Store index for backend
+                    };
+                    changesToSave[fileKey] = changesToSave[fileKey] || [];
+                    changesToSave[fileKey].push(change);
+                    console.log(`Recorded delete row: ${JSON.stringify(change)}`);
+
+                    // Immediately remove from DataTables and re-draw
+                    dataTable.row($tr).remove().draw();
+                });
+
+                // --- Row Addition ---
+                $('.add-row-btn[data-file-key="' + fileKey + '"]').off('click').on('click', function() {
+                    const numCols = dataTable.columns().count() -1 ; // Exclude the 'Actions' column
+                    const newRowData = Array(numCols).fill(''); // Create an array of empty strings
+                    
+                    // Add the actions column cell data (the trash icon)
+                    newRowData.push('<i class="fas fa-trash-alt action-icon delete-row-icon"></i>');
+
+                    // Add row to DataTables
+                    const addedRowNode = dataTable.row.add(newRowData).draw(false).node(); // 'false' to not redraw fully
+                    
+                    // Record change
+                    const change = {
+                        type: 'add_row'
+                    };
+                    changesToSave[fileKey] = changesToSave[fileKey] || [];
+                    changesToSave[fileKey].push(change);
+                    console.log(`Recorded add row: ${JSON.stringify(change)}`);
+
+                    // Optionally scroll to the new row
+                    dataTable.page('last').draw('page'); // Go to last page to see new row
+                });
+
+                // --- Column Deletion ---
+                $(tableId).on('click', '.delete-column-icon', function() {
+                    if (!confirm("Are you sure you want to delete this column? This cannot be undone without saving changes.")) {
+                        return;
+                    }
+                    const colName = $(this).data('col-name');
+                    // Find the column index by name (important for correct column targeting)
+                    const columnIndex = dataTable.column(function (idx, data, node) {
+                        return ($(node).find('span').text().trim() || $(node).text().trim()) === colName;
+                    }).index();
+
+                    if (columnIndex === undefined || columnIndex === null) {
+                        alert("Could not find column to delete.");
+                        return;
+                    }
+
+                    const change = {
+                        type: 'delete_column',
+                        col_name: colName
+                    };
+                    changesToSave[fileKey] = changesToSave[fileKey] || [];
+                    changesToSave[fileKey].push(change);
+                    console.log(`Recorded delete column: ${JSON.stringify(change)}`);
+
+                    // Immediately hide the column in the UI
+                    dataTable.column(columnIndex).visible(false);
+                    // Remove the filter input from the cloned header row
+                    $(tableId + ' thead tr:eq(1) th').eq(columnIndex).html('');
+                    alert(`Column "${colName}" marked for deletion. Click 'Save Changes' to finalize and reload.`);
+                });
+
+
+                // --- Column Addition ---
+                $('.add-column-btn[data-file-key="' + fileKey + '"]').off('click').on('click', function() {
+                    let newColName = prompt("Enter new column name:");
+                    if (!newColName) {
+                        return;
+                    }
+                    newColName = newColName.trim();
+                    if (newColName === '') {
+                        alert("Column name cannot be empty.");
+                        return;
+                    }
+
+                    // Check if column already exists
+                    const existingHeaders = dataTable.columns().header().toArray().map(h => $(h).find('span').text().trim() || $(h).text().trim());
+                    if (existingHeaders.includes(newColName)) {
+                        alert(`Column "${newColName}" already exists.`);
+                        return;
+                    }
+
+                    // Record change
+                    const change = {
+                        type: 'add_column',
+                        new_col_name: newColName
+                    };
+                    changesToSave[fileKey] = changesToSave[fileKey] || [];
+                    changesToSave[fileKey].push(change);
+                    console.log(`Recorded add column: ${JSON.stringify(change)}`);
+
+                    // Alert user to save changes to see the new column fully.
+                    // A full page reload is the most reliable way to display new columns with DataTables.
+                    alert(`Column "${newColName}" will be added. Click 'Save Changes' to finalize and reload the page.`);
+                });
+
+
+                // --- Save Changes Button ---
+                $('.save-changes-btn[data-file-key="' + fileKey + '"]').off('click').on('click', function() {
+                    if (!changesToSave[fileKey] || changesToSave[fileKey].length === 0) {
+                        alert("No changes to save for this file.");
+                        return;
+                    }
+
+                    if (!confirm("Are you sure you want to save these changes? This will permanently modify the CSV.")) {
+                        return;
+                    }
+
+                    $.ajax({
+                        url: '/update_csv_data',
+                        type: 'POST',
+                        contentType: 'application/json',
+                        data: JSON.stringify({
+                            session_id: sessionId,
+                            file_key: fileKey,
+                            changes: changesToSave[fileKey]
+                        }),
+                        success: function(response) {
+                            if (response.status === 'success') {
+                                alert("Changes saved successfully! The page will now reload to reflect all changes.");
+                                changesToSave[fileKey] = []; // Clear recorded changes
+                                window.location.reload(); // Simplest way to re-render DataTables with new columns/rows/structure
+                            } else {
+                                alert("Error saving changes: " + response.message);
+                            }
+                        },
+                        error: function(jqXHR, textStatus, errorThrown) {
+                            alert('AJAX Error saving changes: ' + (jqXHR.responseJSON ? jqXHR.responseJSON.message : errorThrown));
+                            console.error('Error saving changes:', textStatus, errorThrown, jqXHR.responseText);
+                        }
+                    });
+                });
+            }
+
+            // Initialize DataTables for each table on the page
+            {% for file_key, table_data in tables.items() %}
+                initializeDataTable('#{{ file_key }}_table', '{{ file_key }}');
             {% endfor %}
+
+            // --- Download Button ---
+            $('.download-btn').off('click').on('click', function() {
+                const fileKey = $(this).data('file-key');
+                const originalFileName = $(this).data('original-file-name'); // Get original name from data attribute
+                window.location.href = `/download_csv/${sessionId}/${fileKey}/${encodeURIComponent(originalFileName)}`;
+            });
+            
+            // --- Count Counter Mode Modal Logic ---
+            const countModal = $('#countModeModal');
+            const countColumnSelect = $('#countColumnSelect');
+            const getColumnCountsBtn = $('#getColumnCountsBtn');
+            const countResultsTableBody = $('#count-results-table tbody');
+            const countError = $('#countError');
+            let currentCountFileKey = null;
+
+            $('.count-mode-btn').off('click').on('click', function() {
+                currentCountFileKey = $(this).data('file-key');
+                const tableId = '#' + currentCountFileKey + '_table';
+                const dataTable = $(tableId).DataTable();
+                
+                // Populate the dropdown with column headers
+                countColumnSelect.empty();
+                countColumnSelect.append($('<option>', {
+                    value: '',
+                    text: '-- Select a Column --',
+                    disabled: true,
+                    selected: true
+                }));
+                dataTable.columns().header().each(function(header, index) {
+                    // Exclude the 'Actions' column (last one) from count mode
+                    if (index < dataTable.columns().count() - 1) {
+                         const colName = $(header).find('span').text().trim() || $(header).text().trim();
+                        countColumnSelect.append($('<option>', {
+                            value: colName,
+                            text: colName
+                        }));
+                    }
+                });
+
+                countResultsTableBody.empty(); // Clear previous results
+                countError.hide(); // Hide previous errors
+                countModal.css('display', 'flex'); // Show modal
+            });
+
+            // Close modal button
+            $('.close-button').off('click').on('click', function() {
+                countModal.hide();
+            });
+
+            // Close modal when clicking outside
+            $(window).on('click', function(event) {
+                if ($(event.target).is(countModal)) {
+                    countModal.hide();
+                }
+            });
+
+            // Get Counts button inside modal
+            getColumnCountsBtn.off('click').on('click', function() {
+                const selectedColumn = countColumnSelect.val();
+                if (!selectedColumn) {
+                    countError.text('Please select a column.').show();
+                    countResultsTableBody.empty();
+                    return;
+                }
+                countError.hide();
+
+                $.ajax({
+                    url: '/get_column_counts',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        session_id: sessionId,
+                        file_key: currentCountFileKey,
+                        column_name: selectedColumn
+                    }),
+                    success: function(response) {
+                        if (response.status === 'success') {
+                            countResultsTableBody.empty();
+                            if (response.counts.length > 0) {
+                                response.counts.forEach(item => {
+                                    countResultsTableBody.append(`
+                                        <tr>
+                                            <td>${escapeHtml(item.Value)}</td>
+                                            <td>${escapeHtml(item.Count)}</td>
+                                        </tr>
+                                    `);
+                                });
+                            } else {
+                                countResultsTableBody.append('<tr><td colspan="2">No unique values found or column is empty.</td></tr>');
+                            }
+                        } else {
+                            countError.text('Error getting counts: ' + response.message).show();
+                            countResultsTableBody.empty();
+                        }
+                    },
+                    error: function(jqXHR, textStatus, errorThrown) {
+                        countError.text('AJAX Error getting counts: ' + (jqXHR.responseJSON ? jqXHR.responseJSON.message : errorThrown)).show();
+                        countResultsTableBody.empty();
+                        console.error('Error getting column counts:', textStatus, errorThrown, jqXHR.responseText);
+                    }
+                });
+            });
         });
+
+        // Simple HTML escaping function
+        function escapeHtml(text) {
+            if (text === null || typeof text === 'undefined') {
+                return '';
+            }
+            return String(text).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        }
     </script>
 </body>
 </html>

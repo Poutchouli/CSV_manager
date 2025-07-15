@@ -184,30 +184,60 @@
         $(document).ready(function() {
             const sessionId = "{{ session_id }}";
             let currentFileKey = $('.select-file-btn.active').data('file-key');
+            // Store configurations for each file
+            const fileConfigurations = {};
+            
+            // Initialize fileConfigurations with default options for all files
+            {% for file_obj in files %}
+                fileConfigurations['{{ file_obj.key }}'] = {
+                    encoding: "{{ default_options.encoding }}",
+                    delimiter: "{{ default_options.delimiter }}",
+                    quotechar: "{{ default_options.quotechar }}",
+                    has_header: {{ default_options.has_header | tojson }},
+                    skip_rows: {{ default_options.skip_rows }}
+                };
+            {% endfor %}
 
-            // Function to get current parsing options
-            function getParsingOptions() {
+            // Function to get current parsing options from UI
+            function getParsingOptionsFromUI() {
                 let delimiter = $('input[name="delimiter"]:checked').val();
                 if (delimiter === 'other') {
                     delimiter = $('#other-delimiter-input').val();
                 } else if (delimiter === 'space') {
-                    delimiter = ' '; // Pandas expects ' ' for single space delimiter
+                    delimiter = ' ';
                 }
                 
                 return {
-                    session_id: sessionId,
-                    file_key: currentFileKey,
                     encoding: $('#encoding').val(),
                     delimiter: delimiter,
                     quotechar: $('#quotechar').val(),
                     has_header: $('#has-header').is(':checked'),
-                    skip_rows: $('#skip-rows').val()
+                    skip_rows: parseInt($('#skip-rows').val() || 0) // Ensure number
                 };
+            }
+
+            // Function to apply saved options to UI
+            function applyOptionsToUI(options) {
+                $('#encoding').val(options.encoding);
+                $('input[name="delimiter"][value="' + options.delimiter + '"]').prop('checked', true);
+                // Handle 'Other' delimiter
+                if (options.delimiter !== ',' && options.delimiter !== ';' && options.delimiter !== '\\t' && options.delimiter !== ' ') {
+                    $('input[name="delimiter"][value="other"]').prop('checked', true);
+                    $('#other-delimiter-input').val(options.delimiter).prop('disabled', false);
+                } else {
+                    $('#other-delimiter-input').prop('disabled', true);
+                }
+
+                $('#quotechar').val(options.quotechar);
+                $('#has-header').prop('checked', options.has_header);
+                $('#skip-rows').val(options.skip_rows);
             }
 
             // Function to fetch and render preview
             function fetchAndRenderPreview() {
-                const options = getParsingOptions();
+                const options = getParsingOptionsFromUI(); // Get current UI options
+                fileConfigurations[currentFileKey] = options; // Save current UI options to config object
+
                 $('#preview-status').text('Loading preview...').show();
                 $('#preview-error').hide();
                 $('#preview-table thead').empty();
@@ -217,7 +247,11 @@
                     url: '/preview_csv',
                     type: 'POST',
                     contentType: 'application/json',
-                    data: JSON.stringify(options),
+                    data: JSON.stringify({
+                        session_id: sessionId,
+                        file_key: currentFileKey,
+                        ...options // Pass all current options for preview
+                    }),
                     success: function(response) {
                         $('#preview-status').hide();
                         if (response.error) {
@@ -268,7 +302,8 @@
                 $(this).addClass('active');
                 currentFileKey = $(this).data('file-key');
                 $('#current-preview-file-name').text($(this).data('file-name'));
-                fetchAndRenderPreview(); // Re-fetch preview for the selected file
+                applyOptionsToUI(fileConfigurations[currentFileKey]); // Apply saved options for selected file
+                fetchAndRenderPreview(); // Re-fetch preview for the selected file (with new options)
             });
 
             // Event Listeners for option changes (debounce for performance)
@@ -287,47 +322,39 @@
                     $('#other-delimiter-input').prop('disabled', true);
                 }
             });
-            // Initial state for 'Other' delimiter
             if ($('#other-delimiter-radio').is(':checked')) {
                 $('#other-delimiter-input').prop('disabled', false);
             }
 
-
             // Handle Import All button click
             $('#import-all-btn').on('click', function() {
-                // Collect options for all uploaded files
-                const filesToImport = [];
-                $('.select-file-btn').each(function() {
-                    const fileKey = $(this).data('file-key');
-                    // For now, we'll assume the currently displayed options apply to all files.
-                    // In a more complex scenario, user might configure each file separately.
-                    // Or, we send current options + file_key for each, and Flask processes them sequentially.
-                    filesToImport.push({
-                        file_key: fileKey,
-                        options: getParsingOptions() // This gets options for the *currently selected* file.
-                                                    // If options are file-specific, need to store/retrieve them.
-                    });
+                // Ensure current options are saved for the selected file before sending
+                fileConfigurations[currentFileKey] = getParsingOptionsFromUI();
+
+                $.ajax({
+                    url: `/final_import/${sessionId}`, // Send to the new POST endpoint
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(fileConfigurations), // Send all collected file configurations
+                    success: function(response) {
+                        // Flask will redirect on success, so no explicit success handling needed here for redirect path
+                        if (response.redirect) {
+                            window.location.href = response.redirect;
+                        } else {
+                            // Fallback, should not happen with Flask redirect
+                            window.location.href = `/display_csv/${sessionId}`; 
+                        }
+                    },
+                    error: function(jqXHR, textStatus, errorThrown) {
+                        alert('Error during final import: ' + (jqXHR.responseJSON ? jqXHR.responseJSON.message : errorThrown));
+                        console.error('Error during final import:', textStatus, errorThrown, jqXHR.responseText);
+                    }
                 });
-                
-                // For simplicity now, let's just use the current options for the selected file,
-                // and assume for *this* step that options applied to one file
-                // are intended for all. If both files are present, we'll send both keys.
-                // A better approach would be to have a hidden input or JS object per file storing its config.
-                
-                // Let's modify the final import to just send the session_id, and let Flask
-                // re-read the raw files from session and apply the _default_ parsing options
-                // (or the ones stored if we implement file-specific option storage).
-                // For now, just send the session_id to trigger the final cleaning/display.
-                
-                // New Approach for 'Import All': Trigger the final cleaning and display route.
-                // We'll create a new route '/final_import' that takes the session_id.
-                // This route will iterate through raw_uploaded_file_paths, apply a default (or last used) config,
-                // and then perform the cleaning, before redirecting to display_csv.
-                window.location.href = `/final_import/${sessionId}`;
             });
 
             // Initial load: set active file name and fetch preview for the first file
             $('#current-preview-file-name').text($('.select-file-btn.active').data('file-name'));
+            applyOptionsToUI(fileConfigurations[currentFileKey]); // Apply initial defaults
             fetchAndRenderPreview();
         });
     </script>

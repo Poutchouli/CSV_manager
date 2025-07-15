@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  csv-manager:
+    build: .
+    ports:
+      - "17653:17653"
+    volumes:
+      - ./uploads:/app/uploads
+      - ./templates:/app/templates
+    environment:
+      - FLASK_ENV=development
+      - FLASK_DEBUG=1
+    restart: unless-stopped
+    container_name: csv_manager_app
