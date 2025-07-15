@@ -248,6 +248,8 @@ $(document).ready(function() {
                 const groupingInfo = this.groupingState[fileKey];
                 let dtConfig = {
                     responsive: true, scrollX: true,
+                    pageLength: 25,
+                    lengthMenu: [[10, 25, 50, 100, 250, 500, 1000, -1], [10, 25, 50, 100, 250, 500, 1000, "All"]],
                     columnDefs: [{ orderable: false, targets: -1 }],
                     rowGroup: groupingInfo ? { 
                         dataSrc: groupingInfo.colIndex,
