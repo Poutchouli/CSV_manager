@@ -375,12 +375,8 @@ $(document).ready(function() {
                                 self.showToast('error', 'Column name cannot be empty.');
                                 return false;
                             }
-                            self.recordChange(fileKey, { type: 'add_column', col_name: newColName });
+                            self.recordChange(fileKey, { type: 'add_column', col_name: newColName, reload_required: true });
                             self.showToast('success', `Column '${newColName}' will be added on save. Page will reload.`);
-                            // Mark for reload
-                            if(!self.changes[fileKey].find(c => c.reload_required)) {
-                                self.changes[fileKey].push({reload_required: true});
-                            }
                             return true;
                         }
                     });
@@ -453,10 +449,7 @@ $(document).ready(function() {
                         body: `Are you sure you want to delete the column "<strong>${colName}</strong>"? This will require a save and page reload.`,
                         primaryBtnText: 'Delete',
                         onConfirm: () => {
-                            self.recordChange(fileKey, { type: 'delete_column', col_name: colName });
-                            if(!self.changes[fileKey].find(c => c.reload_required)) {
-                                self.changes[fileKey].push({reload_required: true});
-                            }
+                            self.recordChange(fileKey, { type: 'delete_column', col_name: colName, reload_required: true });
                             self.showToast('success', `Column '${colName}' will be deleted on save.`);
                             return true;
                         }

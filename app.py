@@ -107,6 +107,17 @@ def upload_files():
 
     return redirect(url_for('display_data'))
 
+def detect_delimiter(filepath):
+    """Detect the delimiter used in a CSV file."""
+    try:
+        with open(filepath, 'r', encoding='utf-8') as f:
+            first_line = f.readline()
+            if ';' in first_line and first_line.count(';') > first_line.count(','):
+                return ';'
+            return ','
+    except:
+        return ','
+
 @app.route('/display')
 def display_data():
     """Displays the uploaded CSV data in editable tables."""
@@ -117,17 +128,20 @@ def display_data():
         filepath = get_filepath(file_key)
         if filepath and os.path.exists(filepath):
             try:
-                df = pd.read_csv(filepath, on_bad_lines='warn', engine='python')
+                delimiter = detect_delimiter(filepath)
+                df = pd.read_csv(filepath, sep=delimiter, on_bad_lines='warn', engine='python')
                 tables[file_key] = {
                     'headers': df.columns.tolist(),
                     'data': df.values.tolist(),
-                    'original_name': session.get(f'{file_key}_original_name', 'Unnamed File')
+                    'original_name': session.get(f'{file_key}_original_name', 'Unnamed File'),
+                    'delimiter': delimiter  # Store delimiter for later use
                 }
+                # Store delimiter in session for consistency
+                session[f'{file_key}_delimiter'] = delimiter
             except Exception as e:
                 print(f"Error reading {filepath}: {e}")
                 # Optionally, pass error info to the template
                 tables[file_key] = {'error': str(e), 'original_name': session.get(f'{file_key}_original_name')}
-
 
     return render_template('display_csv.html', tables=tables)
 
@@ -155,20 +169,29 @@ def update_data():
         return jsonify({"status": "error", "message": "File not found."}), 404
 
     try:
-        df = pd.read_csv(filepath)
+        # Get stored delimiter or detect it
+        delimiter = session.get(f'{file_key}_delimiter', ';')
+        df = pd.read_csv(filepath, sep=delimiter, on_bad_lines='warn', engine='python')
+        
+        print(f"DEBUG: Received changes: {changes}")  # Debug line
+        
+        # Track if we need a reload due to structural changes
+        reload_required = any(c.get('reload_required') or c.get('type') in ['add_column', 'delete_column'] for c in changes)
         
         # Process deletions first to avoid index shifting issues
-        delete_row_indices = [c['row_index'] for c in changes if c['type'] == 'delete_row']
+        delete_row_indices = [c['row_index'] for c in changes if c.get('type') == 'delete_row']
         if delete_row_indices:
             df = df.drop(index=delete_row_indices).reset_index(drop=True)
 
-        delete_col_names = [c['col_name'] for c in changes if c['type'] == 'delete_column']
+        delete_col_names = [c['col_name'] for c in changes if c.get('type') == 'delete_column']
         if delete_col_names:
             df = df.drop(columns=delete_col_names, errors='ignore')
 
         # Process other changes
         for change in changes:
-            change_type = change['type']
+            change_type = change.get('type')  # Use get() instead of direct access
+            print(f"DEBUG: Processing change: {change}")  # Debug line
+            
             if change_type == 'edit':
                 # Assumes indices from non-deleted rows are still valid after reset_index
                 row_idx, col_name, new_val = change['row_index'], change['col_name'], change['new_value']
@@ -187,13 +210,23 @@ def update_data():
                     df[col_name] = df[col_name].astype(str).replace(find_val, replace_val)
                 else: # All columns
                     df = df.replace(find_val, replace_val)
+            elif change_type is None:
+                print(f"DEBUG: Skipping change with no type: {change}")  # Debug line
+                continue
 
-
-        df.to_csv(filepath, index=False)
-        return jsonify({"status": "success", "message": "Changes saved!"})
+        # Save with the same delimiter
+        df.to_csv(filepath, index=False, sep=delimiter)
+        
+        response = {"status": "success", "message": "Changes saved!"}
+        if reload_required:
+            response["reload_required"] = True
+            
+        return jsonify(response)
 
     except Exception as e:
         print(f"Error updating data: {e}")
+        import traceback
+        traceback.print_exc()  # This will help debug the actual error
         return jsonify({"status": "error", "message": str(e)}), 500
 
 @app.route('/api/get_column_summary', methods=['POST'])
@@ -203,24 +236,32 @@ def get_column_summary():
     file_key, col_name = data.get('file_key'), data.get('column_name')
     filepath = get_filepath(file_key)
 
-    if not all([file_key, col_name, filepath, os.path.exists(filepath)]):
+    if not all([file_key, col_name, filepath]) or not os.path.exists(filepath):
         return jsonify({"status": "error", "message": "Invalid request."}), 400
 
-    df = pd.read_csv(filepath)
-    if col_name not in df.columns:
-        return jsonify({"status": "error", "message": "Column not found."}), 404
+    try:
+        # Get stored delimiter or detect it
+        delimiter = session.get(f'{file_key}_delimiter', ';')
+        df = pd.read_csv(filepath, sep=delimiter)
         
-    col_data = df[col_name].dropna()
+        if col_name not in df.columns:
+            return jsonify({"status": "error", "message": "Column not found."}), 404
+            
+        col_data = df[col_name].dropna()
 
-    if pd.api.types.is_numeric_dtype(col_data) and col_data.nunique() > 15:
-        # Histogram for numerical data
-        counts, bins = pd.np.histogram(col_data, bins=10)
-        labels = [f"{bins[i]:.1f}-{bins[i+1]:.1f}" for i in range(len(bins)-1)]
-        return jsonify({"status": "success", "type": "histogram", "labels": labels, "data": counts.tolist()})
-    else:
-        # Bar chart for categorical or low-cardinality numerical data
-        counts = col_data.astype(str).value_counts().nlargest(20)
-        return jsonify({"status": "success", "type": "bar", "labels": counts.index.tolist(), "data": counts.values.tolist()})
+        if pd.api.types.is_numeric_dtype(col_data) and col_data.nunique() > 15:
+            # Histogram for numerical data
+            import numpy as np
+            counts, bins = np.histogram(col_data, bins=10)
+            labels = [f"{bins[i]:.1f}-{bins[i+1]:.1f}" for i in range(len(bins)-1)]
+            return jsonify({"status": "success", "type": "histogram", "labels": labels, "data": counts.tolist()})
+        else:
+            # Bar chart for categorical or low-cardinality numerical data
+            counts = col_data.astype(str).value_counts().nlargest(20)
+            return jsonify({"status": "success", "type": "bar", "labels": counts.index.tolist(), "data": counts.values.tolist()})
+    except Exception as e:
+        print(f"Error in get_column_summary: {e}")
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 @app.route('/api/merge_tables', methods=['POST'])
 def merge_tables():
@@ -231,23 +272,29 @@ def merge_tables():
     how = data.get('how', 'inner')
 
     path1, path2 = get_filepath(key1), get_filepath(key2)
-    if not all([path1, path2, os.path.exists(path1), os.path.exists(path2)]):
+    if not path1 or not path2 or not os.path.exists(path1) or not os.path.exists(path2):
         return jsonify({"status": "error", "message": "One or both files not found."}), 404
 
     try:
-        df1, df2 = pd.read_csv(path1), pd.read_csv(path2)
+        # Get delimiters for both files
+        delimiter1 = session.get(f'{key1}_delimiter', ';')
+        delimiter2 = session.get(f'{key2}_delimiter', ';')
+        
+        df1 = pd.read_csv(path1, sep=delimiter1)
+        df2 = pd.read_csv(path2, sep=delimiter2)
         merged_df = pd.merge(df1, df2, left_on=col1, right_on=col2, how=how, suffixes=('_1', '_2'))
         
-        # Save merged file
+        # Save merged file with semicolon delimiter
         session_dir = get_session_dir()
         merged_key = f"file{len([k for k in session if k.endswith('_filename')]) + 1}"
         merged_filename = f"merged_{session.get(f'{key1}_original_name')}_{session.get(f'{key2}_original_name')}"
         merged_filepath = os.path.join(session_dir, secure_filename(merged_filename))
         
-        merged_df.to_csv(merged_filepath, index=False)
+        merged_df.to_csv(merged_filepath, index=False, sep=';')
 
         session[f'{merged_key}_filename'] = secure_filename(merged_filename)
         session[f'{merged_key}_original_name'] = merged_filename
+        session[f'{merged_key}_delimiter'] = ';'  # Store delimiter for merged file
 
         return jsonify({"status": "success", "message": "Tables merged successfully!"})
     except Exception as e:
