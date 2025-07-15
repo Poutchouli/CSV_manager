@@ -77,6 +77,78 @@
             width: 100%; /* Ensure content takes full width of th */
         }
 
+        /* Column filter and action row above headers */
+        .column-controls {
+            background-color: #f8f9fa;
+            border-bottom: 2px solid #dee2e6;
+        }
+        .column-controls th {
+            padding: 8px;
+            border: 1px solid #ddd;
+            background-color: #f8f9fa !important;
+            position: relative;
+        }
+        .column-controls input {
+            width: 100%;
+            padding: 4px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            font-size: 0.85em;
+        }
+        .column-delete-btn {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            background: #dc3545;
+            color: white;
+            border: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            font-size: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .column-delete-btn:hover {
+            background: #bd2130;
+        }
+
+        /* Make newly added rows/cells stand out for immediate editing */
+        .newly-added {
+            background-color: #e7f3ff !important;
+            border: 2px solid #007bff !important;
+        }
+
+        /* Grouping styles */
+        .group-header {
+            background-color: #e9ecef !important;
+            font-weight: bold;
+            cursor: pointer;
+            user-select: none;
+        }
+        .group-header:hover {
+            background-color: #dee2e6 !important;
+        }
+        .group-header td {
+            padding: 12px 8px !important;
+            border-top: 2px solid #adb5bd !important;
+        }
+        .group-collapse-icon {
+            margin-right: 8px;
+            transition: transform 0.2s ease;
+        }
+        .group-collapsed .group-collapse-icon {
+            transform: rotate(-90deg);
+        }
+        .group-content {
+            transition: all 0.3s ease;
+        }
+        .group-content.collapsed {
+            display: none;
+        }
+
         /* Modal Styles */
         .modal {
             display: none;
@@ -143,6 +215,36 @@
         #count-results-table th {
             background-color: #f2f2f2;
         }
+
+        /* Context Menu Styles */
+        .context-menu {
+            position: absolute;
+            background: white;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            padding: 5px 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            z-index: 1000;
+            min-width: 120px;
+            display: none;
+        }
+        .context-menu-item {
+            padding: 8px 15px;
+            cursor: pointer;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .context-menu-item:hover {
+            background-color: #f5f5f5;
+        }
+        .context-menu-item.danger {
+            color: #dc3545;
+        }
+        .context-menu-item.danger:hover {
+            background-color: #f8d7da;
+        }
     </style>
 </head>
 <body>
@@ -169,6 +271,7 @@
                             <button class="add-btn add-row-btn" data-file-key="{{ file_key }}"><i class="fas fa-plus"></i> Add Row</button>
                             <button class="add-btn add-column-btn" data-file-key="{{ file_key }}"><i class="fas fa-plus"></i> Add Column</button>
                             <button class="warn-btn count-mode-btn" data-file-key="{{ file_key }}"><i class="fas fa-calculator"></i> Count Mode</button>
+                            <button class="warn-btn group-toggle-btn" data-file-key="{{ file_key }}"><i class="fas fa-layer-group"></i> Toggle Grouping</button>
                         </div>
                         <div>
                              <button class="save-btn save-changes-btn" data-file-key="{{ file_key }}"><i class="fas fa-save"></i> Save Changes</button>
@@ -182,11 +285,12 @@
                                     <th>
                                         <div class="col-header-actions">
                                             <span>{{ header }}</span>
-                                            <i class="fas fa-times-circle action-icon delete-column-icon" data-col-name="{{ header }}"></i>
+                                            <i class="fas fa-times-circle action-icon delete-column-icon" data-col-name="{{ header }}" title="Delete column"></i>
                                         </div>
                                     </th>
                                 {% endfor %}
-                                <th>Actions</th> </tr>
+                                <th>Actions</th>
+                            </tr>
                         </thead>
                         <tbody>
                             {% for row in table_data.data %}
@@ -208,6 +312,7 @@
         {% endif %}
     </div>
 
+    <!-- Count Mode Modal -->
     <div id="countModeModal" class="modal">
         <div class="modal-content">
             <span class="close-button">&times;</span>
@@ -234,6 +339,36 @@
         </div>
     </div>
 
+    <!-- Grouping Modal -->
+    <div id="groupingModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <h2>Group Data by Column</h2>
+            <div class="modal-body">
+                <p>Select a column to group similar data together.</p>
+                <select id="groupColumnSelect">
+                    </select>
+                <button id="applyGroupingBtn">Apply Grouping</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Context Menu -->
+    <div id="contextMenu" class="context-menu">
+        <div class="context-menu-item danger" id="deleteRowMenuItem">
+            <i class="fas fa-trash-alt"></i>
+            Delete Row
+        </div>
+    </div>
+
+    <!-- Column Context Menu -->
+    <div id="columnContextMenu" class="context-menu">
+        <div class="context-menu-item danger" id="deleteColumnMenuItem">
+            <i class="fas fa-trash-alt"></i>
+            Delete Column
+        </div>
+    </div>
+
 
     <script type="text/javascript" src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script type="text/javascript" src="https://cdn.datatables.net/2.0.8/js/dataTables.min.js"></script>
@@ -246,50 +381,26 @@
                 // Destroy existing DataTable instance if it exists
                 if ($.fn.DataTable.isDataTable(tableId)) {
                     $(tableId).DataTable().destroy();
-                    // Clear previously added column filter row
-                    $(tableId + ' thead tr:eq(1)').remove(); // Remove the filter row if it exists
                 }
 
-                // Initialize DataTables
+                // Initialize DataTables with clean structure
                 var dataTable = $(tableId).DataTable({
                     "paging": true,
                     "searching": true,
                     "ordering": true,
                     "info": true,
                     "lengthMenu": [ [10, 25, 50, 100, -1], [10, 25, 50, 100, "All"] ],
-                    "autoWidth": false, // Prevent DataTables from calculating fixed widths
-                    "scrollX": true,    // Enable horizontal scrolling for wide tables
-                    "scrollCollapse": true, // Adjust table height to fit visible rows
-                    "fixedColumns": { // Keep first/last columns visible if scrolling
+                    "autoWidth": false,
+                    "scrollX": true,
+                    "scrollCollapse": true,
+                    "fixedColumns": {
                         leftColumns: 0,
-                        rightColumns: 1 // For the Actions column
+                        rightColumns: 1
                     },
                     "columnDefs": [
-                        { "orderable": false, "targets": -1 }, // Disable ordering on the Actions column
-                        { "searchable": false, "targets": -1 } // Disable searching on the Actions column
+                        { "orderable": false, "targets": -1 },
+                        { "searchable": false, "targets": -1 }
                     ]
-                });
-
-                // --- Individual Column Filtering ---
-                $(tableId + ' thead tr').clone(true).appendTo(tableId + ' thead');
-                $(tableId + ' thead tr:eq(1) th').each(function (i) {
-                    // Skip the last column (Actions column) for filtering input
-                    if (i === dataTable.columns().count() - 1) {
-                        $(this).html(''); // Empty the cell for the Actions column filter
-                        return;
-                    }
-                    var titleSpan = $(this).find('span');
-                    var title = titleSpan.length ? titleSpan.text() : $(this).text().trim(); // Get the original column title, accounting for delete icon
-                    $(this).html('<input type="text" placeholder="Filter ' + title + '" style="width:100%;" />');
-
-                    $('input', this).on('keyup change', function () {
-                        if (dataTable.column(i).search() !== this.value) {
-                            dataTable
-                                .column(i)
-                                .search(this.value)
-                                .draw();
-                        }
-                    });
                 });
 
                 // --- In-place Cell Editing ---
@@ -298,13 +409,10 @@
                     if ($cell.hasClass('editing')) return; // Prevent multiple edits
                     
                     const originalText = $cell.text();
-                    // DataTables.cell(this).index() gives {row: data_idx, column: col_idx}
                     const columnIndex = dataTable.cell(this).index().column;
-                    const columnHeader = dataTable.column(columnIndex).header();
-                    // Get column name from the <span> element or fallback to text if no span (for initial load)
-                    const colName = $(columnHeader).find('span').text().trim() || $(columnHeader).contents().filter(function() {
-                        return this.nodeType === 3; // Node.TEXT_NODE
-                    }).text().trim(); 
+                    // Get column name from the header
+                    const columnHeader = $(tableId + ' thead tr th').eq(columnIndex);
+                    const colName = columnHeader.find('span').text().trim() || columnHeader.text().trim();
 
                     const rowIndex = dataTable.row($cell.closest('tr')).index(); // DataTables' internal row index
                     
@@ -341,6 +449,12 @@
                     });
                 });
 
+                // Helper function to start editing a cell
+                function startCellEdit($cell) {
+                    if ($cell.hasClass('editing') || !$cell.hasClass('editable')) return;
+                    $cell.trigger('dblclick');
+                }
+
                 // --- Row Deletion ---
                 $(tableId).on('click', '.delete-row-icon', function() {
                     if (!confirm("Are you sure you want to delete this row?")) {
@@ -372,6 +486,10 @@
                     // Add row to DataTables
                     const addedRowNode = dataTable.row.add(newRowData).draw(false).node(); // 'false' to not redraw fully
                     
+                    // Mark new row for immediate editing
+                    $(addedRowNode).addClass('newly-added');
+                    $(addedRowNode).find('td.editable').addClass('newly-added');
+                    
                     // Record change
                     const change = {
                         type: 'add_row'
@@ -380,22 +498,31 @@
                     changesToSave[fileKey].push(change);
                     console.log(`Recorded add row: ${JSON.stringify(change)}`);
 
-                    // Optionally scroll to the new row
+                    // Go to last page and start editing first cell of new row
                     dataTable.page('last').draw('page'); // Go to last page to see new row
+                    
+                    // Auto-start editing the first cell of the new row
+                    setTimeout(() => {
+                        const $firstCell = $(addedRowNode).find('td.editable').first();
+                        if ($firstCell.length) {
+                            startCellEdit($firstCell);
+                        }
+                    }, 100);
                 });
 
                 // --- Column Deletion ---
                 $(tableId).on('click', '.delete-column-icon', function() {
-                    if (!confirm("Are you sure you want to delete this column? This cannot be undone without saving changes.")) {
+                    const colName = $(this).data('col-name');
+                    if (!confirm("Are you sure you want to delete column '" + colName + "'? This cannot be undone without saving changes.")) {
                         return;
                     }
-                    const colName = $(this).data('col-name');
-                    // Find the column index by name (important for correct column targeting)
-                    const columnIndex = dataTable.column(function (idx, data, node) {
-                        return ($(node).find('span').text().trim() || $(node).text().trim()) === colName;
-                    }).index();
+                    
+                    // Find the column index by name
+                    const columnIndex = $(tableId + ' thead tr th').index($(tableId + ' thead tr th').filter(function() {
+                        return $(this).find('span').text().trim() === colName;
+                    }));
 
-                    if (columnIndex === undefined || columnIndex === null) {
+                    if (columnIndex === -1) {
                         alert("Could not find column to delete.");
                         return;
                     }
@@ -410,8 +537,6 @@
 
                     // Immediately hide the column in the UI
                     dataTable.column(columnIndex).visible(false);
-                    // Remove the filter input from the cloned header row
-                    $(tableId + ' thead tr:eq(1) th').eq(columnIndex).html('');
                     alert(`Column "${colName}" marked for deletion. Click 'Save Changes' to finalize and reload.`);
                 });
 
@@ -429,7 +554,10 @@
                     }
 
                     // Check if column already exists
-                    const existingHeaders = dataTable.columns().header().toArray().map(h => $(h).find('span').text().trim() || $(h).text().trim());
+                    const existingHeaders = $(tableId + ' thead tr th').map(function() {
+                        return $(this).find('span').text().trim() || $(this).text().trim();
+                    }).get().slice(0, -1); // Exclude the Actions column
+                    
                     if (existingHeaders.includes(newColName)) {
                         alert(`Column "${newColName}" already exists.`);
                         return;
@@ -446,8 +574,19 @@
 
                     // Alert user to save changes to see the new column fully.
                     // A full page reload is the most reliable way to display new columns with DataTables.
-                    alert(`Column "${newColName}" will be added. Click 'Save Changes' to finalize and reload the page.`);
+                    if (confirm(`Column "${newColName}" will be added. Click 'Save Changes' to finalize and reload the page. Would you like to save now?`)) {
+                        $('.save-changes-btn[data-file-key="' + fileKey + '"]').trigger('click');
+                    }
                 });
+
+                // --- Data Grouping Toggle ---
+                $('.group-toggle-btn[data-file-key="' + fileKey + '"]').off('click').on('click', function() {
+                    toggleDataGrouping(dataTable, tableId, fileKey);
+                });
+
+                // Store the DataTable instance for later use
+                window[fileKey + '_dataTable'] = dataTable;
+                window[fileKey + '_isGrouped'] = false;
 
 
                 // --- Save Changes Button ---
@@ -501,6 +640,7 @@
             
             // --- Count Counter Mode Modal Logic ---
             const countModal = $('#countModeModal');
+            const groupingModal = $('#groupingModal');
             const countColumnSelect = $('#countColumnSelect');
             const getColumnCountsBtn = $('#getColumnCountsBtn');
             const countResultsTableBody = $('#count-results-table tbody');
@@ -523,7 +663,8 @@
                 dataTable.columns().header().each(function(header, index) {
                     // Exclude the 'Actions' column (last one) from count mode
                     if (index < dataTable.columns().count() - 1) {
-                         const colName = $(header).find('span').text().trim() || $(header).text().trim();
+                        // Get column name from the header
+                        const colName = $(header).find('span').text().trim() || $(header).text().trim();
                         countColumnSelect.append($('<option>', {
                             value: colName,
                             text: colName
@@ -539,6 +680,7 @@
             // Close modal button
             $('.close-button').off('click').on('click', function() {
                 countModal.hide();
+                groupingModal.hide();
             });
 
             // Close modal when clicking outside
@@ -594,7 +736,285 @@
                     }
                 });
             });
+
+            // Grouping Modal Event Handlers
+            const applyGroupingBtn = $('#applyGroupingBtn');
+
+            // Close grouping modal button (already handled by general close-button handler)
+            
+            // Close grouping modal when clicking outside
+            $(window).on('click', function(event) {
+                if ($(event.target).is(groupingModal)) {
+                    groupingModal.hide();
+                }
+            });
+
+            // Apply Grouping button inside modal
+            applyGroupingBtn.off('click').on('click', function() {
+                const selectedColumn = $('#groupColumnSelect').val();
+                if (!selectedColumn) {
+                    alert('Please select a column.');
+                    return;
+                }
+
+                const context = groupingModal.data('context');
+                if (context) {
+                    applyGrouping(context.dataTable, context.tableId, context.fileKey, selectedColumn);
+                    groupingModal.hide();
+                }
+            });
+
+            // Context Menu Functionality
+            let currentContextRow = null;
+            let currentContextColumn = null;
+            let currentContextFileKey = null;
+
+            // Row right-click context menu
+            $(document).on('contextmenu', 'table.display tbody tr', function(e) {
+                // Skip if this is a group header
+                if ($(this).hasClass('group-header')) {
+                    return true; // Allow default context menu
+                }
+
+                e.preventDefault();
+                currentContextRow = this;
+                
+                // Find which table this row belongs to
+                const $table = $(this).closest('table');
+                const tableId = $table.attr('id');
+                currentContextFileKey = tableId.replace('_table', '');
+
+                // Position and show context menu
+                $('#contextMenu').css({
+                    top: e.pageY + 'px',
+                    left: e.pageX + 'px',
+                    display: 'block'
+                });
+
+                // Hide column context menu
+                $('#columnContextMenu').hide();
+            });
+
+            // Column header right-click context menu
+            $(document).on('contextmenu', 'table.display thead th', function(e) {
+                // Skip if this is the Actions column
+                const $headerSpan = $(this).find('span');
+                const colName = $headerSpan.text().trim() || $(this).text().trim();
+                if (colName === 'Actions') {
+                    return true; // Allow default context menu
+                }
+
+                e.preventDefault();
+                currentContextColumn = colName;
+                
+                // Find which table this header belongs to
+                const $table = $(this).closest('table');
+                const tableId = $table.attr('id');
+                currentContextFileKey = tableId.replace('_table', '');
+
+                // Position and show context menu
+                $('#columnContextMenu').css({
+                    top: e.pageY + 'px',
+                    left: e.pageX + 'px',
+                    display: 'block'
+                });
+
+                // Hide row context menu
+                $('#contextMenu').hide();
+            });
+
+            // Hide context menus on click elsewhere
+            $(document).on('click', function(e) {
+                if (!$(e.target).closest('.context-menu').length) {
+                    $('#contextMenu, #columnContextMenu').hide();
+                }
+            });
+
+            // Delete Row context menu action
+            $('#deleteRowMenuItem').on('click', function() {
+                if (currentContextRow && currentContextFileKey) {
+                    if (!confirm("Are you sure you want to delete this row?")) {
+                        $('#contextMenu').hide();
+                        return;
+                    }
+
+                    const $tr = $(currentContextRow);
+                    const tableId = '#' + currentContextFileKey + '_table';
+                    const dataTable = $(tableId).DataTable();
+                    const rowIndex = dataTable.row($tr).index();
+                    
+                    const change = {
+                        type: 'delete_row',
+                        row_indices: [rowIndex]
+                    };
+                    changesToSave[currentContextFileKey] = changesToSave[currentContextFileKey] || [];
+                    changesToSave[currentContextFileKey].push(change);
+                    console.log(`Recorded delete row: ${JSON.stringify(change)}`);
+
+                    // Remove from DataTables
+                    dataTable.row($tr).remove().draw();
+                }
+                $('#contextMenu').hide();
+            });
+
+            // Delete Column context menu action
+            $('#deleteColumnMenuItem').on('click', function() {
+                if (currentContextColumn && currentContextFileKey) {
+                    if (!confirm("Are you sure you want to delete column '" + currentContextColumn + "'? This cannot be undone without saving changes.")) {
+                        $('#columnContextMenu').hide();
+                        return;
+                    }
+                    
+                    const tableId = '#' + currentContextFileKey + '_table';
+                    const dataTable = $(tableId).DataTable();
+                    
+                    // Find the column index by name
+                    const columnIndex = $(tableId + ' thead tr th').index($(tableId + ' thead tr th').filter(function() {
+                        return $(this).find('span').text().trim() === currentContextColumn;
+                    }));
+
+                    if (columnIndex === -1) {
+                        alert("Could not find column to delete.");
+                        $('#columnContextMenu').hide();
+                        return;
+                    }
+
+                    const change = {
+                        type: 'delete_column',
+                        col_name: currentContextColumn
+                    };
+                    changesToSave[currentContextFileKey] = changesToSave[currentContextFileKey] || [];
+                    changesToSave[currentContextFileKey].push(change);
+                    console.log(`Recorded delete column: ${JSON.stringify(change)}`);
+
+                    // Hide the column in the UI
+                    dataTable.column(columnIndex).visible(false);
+                    alert(`Column "${currentContextColumn}" marked for deletion. Click 'Save Changes' to finalize and reload.`);
+                }
+                $('#columnContextMenu').hide();
+            });
         });
+
+        // Data grouping functionality
+        function toggleDataGrouping(dataTable, tableId, fileKey) {
+            const isGrouped = window[fileKey + '_isGrouped'];
+            
+            if (isGrouped) {
+                // Remove grouping - restore original data
+                removeGrouping(dataTable, tableId, fileKey);
+            } else {
+                // Apply grouping - show modal to select column
+                showGroupingModal(dataTable, tableId, fileKey);
+            }
+        }
+
+        function showGroupingModal(dataTable, tableId, fileKey) {
+            const columns = dataTable.columns().header().toArray().slice(0, -1); // Exclude Actions column
+            const columnNames = columns.map(h => $(h).find('span').text().trim() || $(h).text().trim());
+            
+            // Populate the select dropdown
+            const select = $('#groupColumnSelect');
+            select.empty();
+            select.append('<option value="">Select a column...</option>');
+            columnNames.forEach(name => {
+                select.append(`<option value="${name}">${name}</option>`);
+            });
+            
+            // Store current context
+            $('#groupingModal').data('context', {
+                dataTable: dataTable,
+                tableId: tableId,
+                fileKey: fileKey
+            });
+            
+            // Show modal
+            $('#groupingModal').show();
+        }
+
+        function applyGrouping(dataTable, tableId, fileKey, groupByColumn) {
+            // Get all data from DataTable
+            const allData = dataTable.rows().data().toArray();
+            const columnIndex = dataTable.column(function(idx, data, node) {
+                return ($(node).find('span').text().trim() || $(node).text().trim()) === groupByColumn;
+            }).index();
+
+            if (columnIndex === null || columnIndex === undefined) {
+                alert("Column not found for grouping.");
+                return;
+            }
+
+            // Group data by the selected column
+            const groups = {};
+            allData.forEach((row, index) => {
+                const groupValue = row[columnIndex] || "Empty";
+                if (!groups[groupValue]) {
+                    groups[groupValue] = [];
+                }
+                groups[groupValue].push({data: row, originalIndex: index});
+            });
+
+            // Clear table and rebuild with groups
+            dataTable.clear();
+            
+            Object.keys(groups).sort().forEach(groupValue => {
+                const groupItems = groups[groupValue];
+                
+                // Add group header row
+                const groupHeaderData = Array(dataTable.columns().count()).fill('');
+                groupHeaderData[0] = `<i class="fas fa-chevron-down group-collapse-icon"></i><strong>${groupByColumn}: ${groupValue} (${groupItems.length} items)</strong>`;
+                
+                const groupRow = dataTable.row.add(groupHeaderData).node();
+                $(groupRow).addClass('group-header').attr('data-group', groupValue);
+                
+                // Add grouped data rows
+                groupItems.forEach(item => {
+                    const dataRow = dataTable.row.add(item.data).node();
+                    $(dataRow).addClass('group-content').attr('data-group', groupValue);
+                });
+            });
+
+            dataTable.draw();
+            window[fileKey + '_isGrouped'] = true;
+
+            // Add click handlers for group headers
+            $(tableId + ' .group-header').off('click').on('click', function() {
+                const groupValue = $(this).attr('data-group');
+                const $groupRows = $(tableId + ' tr[data-group="' + groupValue + '"].group-content');
+                const $icon = $(this).find('.group-collapse-icon');
+                
+                if ($(this).hasClass('group-collapsed')) {
+                    // Expand group
+                    $groupRows.removeClass('collapsed').show();
+                    $(this).removeClass('group-collapsed');
+                    $icon.removeClass('fa-chevron-right').addClass('fa-chevron-down');
+                } else {
+                    // Collapse group
+                    $groupRows.addClass('collapsed').hide();
+                    $(this).addClass('group-collapsed');
+                    $icon.removeClass('fa-chevron-down').addClass('fa-chevron-right');
+                }
+            });
+        }
+
+        function removeGrouping(dataTable, tableId, fileKey) {
+            // Get original data (without group headers)
+            const originalData = [];
+            $(tableId + ' tr.group-content').each(function() {
+                const rowData = dataTable.row(this).data();
+                if (rowData) {
+                    originalData.push(rowData);
+                }
+            });
+
+            // Clear table and restore original data
+            dataTable.clear();
+            originalData.forEach(row => {
+                dataTable.row.add(row);
+            });
+            dataTable.draw();
+            
+            window[fileKey + '_isGrouped'] = false;
+        }
 
         // Simple HTML escaping function
         function escapeHtml(text) {
